@@ -130,9 +130,9 @@ class ChatView(APIView):
         api_key = getattr(settings, "GEMINI_API_KEY", None)
         if api_key:
             try:
-                from google import genai
-
-                client = genai.Client(api_key=api_key)
+                import json
+                import urllib.request
+                import urllib.error
 
                 contents = []
                 for msg in history[-20:]:
@@ -145,17 +145,37 @@ class ChatView(APIView):
 
                 contents.append({"role": "user", "parts": [{"text": user_message}]})
 
-                response = client.models.generate_content(
-                    model="gemini-2.0-flash",
-                    contents=contents,
-                    config={
-                        "system_instruction": SHANYRAQ_SYSTEM_PROMPT,
-                        "temperature": 0.7,
-                        "max_output_tokens": 1024,
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}"
+                
+                payload = {
+                    "systemInstruction": {
+                        "parts": [{"text": SHANYRAQ_SYSTEM_PROMPT}]
                     },
+                    "contents": contents,
+                    "generationConfig": {
+                        "temperature": 0.7,
+                        "maxOutputTokens": 1024
+                    }
+                }
+                
+                req = urllib.request.Request(
+                    url,
+                    data=json.dumps(payload).encode("utf-8"),
+                    headers={"Content-Type": "application/json"}
                 )
-
-                reply = response.text or get_fallback_reply(user_message)
+                
+                with urllib.request.urlopen(req, timeout=10) as response:
+                    res_body = response.read()
+                    res_json = json.loads(res_body)
+                    
+                    try:
+                        reply = res_json["candidates"][0]["content"]["parts"][0]["text"]
+                    except (KeyError, IndexError):
+                        reply = ""
+                    
+                    if not reply:
+                        reply = get_fallback_reply(user_message)
+                        
                 return Response({"reply": reply}, status=status.HTTP_200_OK)
 
             except Exception as e:
