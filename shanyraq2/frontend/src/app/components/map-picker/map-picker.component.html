@@ -1,0 +1,47 @@
+<div class="picker-wrap">
+  <div class="picker-toolbar">
+    <div class="picker-search-wrap">
+      <input
+        type="text"
+        class="picker-search"
+        [(ngModel)]="localSearch"
+        (input)="onSearchInput()"
+        (blur)="hideSuggestions()"
+        (keyup.enter)="searchAddress()"
+        placeholder="Найти адрес на карте..."
+        autocomplete="off"
+      />
+      @if (showSuggestions && suggestions.length > 0) {
+        <ul class="picker-suggestions">
+          @for (s of suggestions; track s.label) {
+            <li class="picker-suggestion" (mousedown)="pickSuggestion(s)">
+              <span class="sugg-icon">📍</span>
+              <span class="sugg-text">{{ s.label }}</span>
+            </li>
+          }
+        </ul>
+      }
+    </div>
+    <button type="button" class="picker-btn" (click)="searchAddress()" [disabled]="isSearching">
+      @if (isSearching) { Поиск... } @else { Найти }
+    </button>
+  </div>
+
+  @if (searchError) {
+    <div class="picker-error">{{ searchError }}</div>
+  }
+
+  <div #mapEl class="picker-map"></div>
+
+  <div class="picker-footer">
+    @if (latitude != null && longitude != null) {
+      <span class="picker-coords">
+        <span class="coord-label">Координаты:</span>
+        {{ latitude }}, {{ longitude }}
+      </span>
+      <button type="button" class="picker-clear" (click)="clearMarker()">Очистить</button>
+    } @else {
+      <span class="picker-hint">Кликните по карте, чтобы поставить метку объекта</span>
+    }
+  </div>
+</div>

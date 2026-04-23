@@ -1,0 +1,19 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+db.sqlite3
+media/
+
+# Node / Angular
+node_modules/
+.angular/
+dist/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store

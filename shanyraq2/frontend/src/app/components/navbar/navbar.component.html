@@ -1,0 +1,86 @@
+<nav class="navbar">
+  <div class="nav-container">
+    <a routerLink="/" class="logo">
+      <span class="logo-main">ШАНЫРАК</span>
+      <span class="logo-sub">ЭЛИТНАЯ НЕДВИЖИМОСТЬ</span>
+    </a>
+
+    <ul class="nav-links">
+      <li>
+        <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+          Главная
+        </a>
+      </li>
+      <li>
+        <a routerLink="/catalog" routerLinkActive="active">Каталог</a>
+      </li>
+    </ul>
+
+    <div class="nav-auth">
+      @if (isLoggedIn) {
+        <div class="profile-wrap">
+          <button class="avatar-btn" (click)="toggleDropdown()">
+            @if (currentUser?.avatar) {
+              <img class="avatar-img" [src]="currentUser?.avatar" alt="avatar" />
+            } @else {
+              <span class="avatar-circle">{{ initials }}</span>
+            }
+            <span class="avatar-name">{{ currentUser?.username }}</span>
+            <span class="avatar-caret" [class.open]="dropdownOpen">▾</span>
+          </button>
+
+          @if (dropdownOpen) {
+            <div class="profile-dropdown">
+              <div class="dropdown-header">
+                @if (currentUser?.avatar) {
+                  <img class="dropdown-avatar-img" [src]="currentUser?.avatar" alt="avatar" />
+                } @else {
+                  <div class="dropdown-avatar">{{ initials }}</div>
+                }
+                <div class="dropdown-info">
+                  <div class="dropdown-username">{{ currentUser?.username }}</div>
+                  <div class="dropdown-email">{{ currentUser?.email }}</div>
+                  <div class="dropdown-badge" [class.seller]="currentUser?.is_agent">
+                    {{ currentUser?.is_agent ? '🏠 Продавец' : '🔍 Клиент' }}
+                  </div>
+                </div>
+              </div>
+
+              <div class="dropdown-divider"></div>
+
+              @if (currentUser?.phone) {
+                <div class="dropdown-row">
+                  <span class="row-label">Телефон</span>
+                  <span class="row-val">{{ currentUser?.phone }}</span>
+                </div>
+                <div class="dropdown-divider"></div>
+              }
+
+              <a routerLink="/dashboard" [queryParams]="{section:'profile'}" class="dropdown-item" (click)="dropdownOpen = false">
+                <span>⚙</span> Профиль
+              </a>
+              @if (currentUser?.is_agent) {
+                <a routerLink="/dashboard" [queryParams]="{section:'listings'}" class="dropdown-item" (click)="dropdownOpen = false">
+                  <span>⌂</span> Мои объявления
+                </a>
+                <a routerLink="/dashboard" [queryParams]="{section:'create'}" class="dropdown-item" (click)="dropdownOpen = false">
+                  <span>+</span> Добавить объект
+                </a>
+              }
+              @if (!currentUser?.is_agent) {
+                <a routerLink="/dashboard" [queryParams]="{section:'favorites'}" class="dropdown-item" (click)="dropdownOpen = false">
+                  <span>♡</span> Избранное
+                </a>
+              }
+              <button class="dropdown-item logout-item" (click)="logout()">
+                <span>→</span> Выйти
+              </button>
+            </div>
+          }
+        </div>
+      } @else {
+        <button class="btn-login" (click)="openLogin()">Войти</button>
+      }
+    </div>
+  </div>
+</nav>

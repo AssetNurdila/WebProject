@@ -1,0 +1,117 @@
+<!-- Floating trigger button -->
+<button class="chat-trigger" [class.open]="isOpen" (click)="toggle()" aria-label="AI Ассистент">
+  @if (isOpen) {
+    <span class="trigger-icon">✕</span>
+  } @else {
+    <span class="trigger-icon">✦</span>
+    <span class="trigger-pulse"></span>
+  }
+</button>
+
+<!-- Chat panel -->
+@if (isOpen) {
+  <div class="chat-panel">
+    <div class="chat-header">
+      <div class="header-left">
+        <div class="header-avatar">✦</div>
+        <div class="header-info">
+          <div class="header-title">Персональный консьерж</div>
+          <div class="header-subtitle">Шанырак</div>
+        </div>
+      </div>
+      <button class="header-close" (click)="toggle()">✕</button>
+    </div>
+
+    <!-- Escalation form -->
+    @if (showEscalation) {
+      <div class="escalation-panel">
+        @if (escSent) {
+          <div class="esc-success">
+            <div class="esc-success-icon">✓</div>
+            <div class="esc-success-title">Обращение принято</div>
+            <p>Благодарим Вас. Наша администрация свяжется с Вами в кратчайшие сроки.</p>
+            <button class="esc-back-btn" (click)="closeEscalation()">Вернуться в чат</button>
+          </div>
+        } @else {
+          <div class="esc-header">
+            <button class="esc-back" (click)="closeEscalation()">← Назад</button>
+            <div class="esc-title">Обращение в администрацию</div>
+          </div>
+          <div class="esc-form">
+            <div class="esc-field">
+              <label>Имя</label>
+              <input type="text" [(ngModel)]="escName" placeholder="Ваше имя" />
+            </div>
+            <div class="esc-field">
+              <label>Email</label>
+              <input type="email" [(ngModel)]="escEmail" placeholder="email@example.com" />
+            </div>
+            <div class="esc-field">
+              <label>Тема</label>
+              <input type="text" [(ngModel)]="escSubject" placeholder="Тема обращения" />
+            </div>
+            <div class="esc-field">
+              <label>Сообщение</label>
+              <textarea [(ngModel)]="escMessage" placeholder="Подробно опишите Ваш вопрос или пожелание..." rows="4"></textarea>
+            </div>
+            <button
+              class="esc-submit"
+              (click)="submitEscalation()"
+              [disabled]="escSending || !escName || !escEmail || !escSubject || !escMessage"
+            >
+              {{ escSending ? 'Отправка...' : 'Отправить' }}
+            </button>
+          </div>
+        }
+      </div>
+    } @else {
+      <!-- Messages -->
+      <div class="chat-messages" #messagesContainer>
+        @for (msg of messages; track $index) {
+          <div class="message" [class.user]="msg.role === 'user'" [class.bot]="msg.role === 'bot'">
+            @if (msg.role === 'bot') {
+              <div class="msg-avatar">✦</div>
+            }
+            <div class="msg-bubble">{{ msg.text }}</div>
+          </div>
+        }
+
+        @if (isLoading) {
+          <div class="message bot">
+            <div class="msg-avatar">✦</div>
+            <div class="msg-bubble typing">
+              <span class="dot"></span>
+              <span class="dot"></span>
+              <span class="dot"></span>
+            </div>
+          </div>
+        }
+
+        <!-- Quick actions (show only at start) -->
+        @if (messages.length <= 1 && !isLoading) {
+          <div class="quick-actions">
+            @for (action of quickActions; track action.label) {
+              <button class="quick-btn" (click)="sendQuickAction(action)">
+                {{ action.label }}
+              </button>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Input -->
+      <div class="chat-input">
+        <input
+          type="text"
+          [(ngModel)]="userInput"
+          (keydown)="onKeydown($event)"
+          placeholder="Напишите сообщение..."
+          [disabled]="isLoading"
+        />
+        <button class="send-btn" (click)="send()" [disabled]="!userInput.trim() || isLoading">
+          ↑
+        </button>
+      </div>
+    }
+  </div>
+}

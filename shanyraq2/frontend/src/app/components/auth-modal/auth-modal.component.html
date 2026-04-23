@@ -1,0 +1,171 @@
+@if (modalService.isOpen()) {
+  <div class="modal-overlay" (click)="close()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <button class="modal-close" (click)="close()">✕</button>
+
+      <div class="modal-logo">
+        <span class="logo-main">ШАНЫРАК</span>
+        <span class="logo-sub">ЭЛИТНАЯ НЕДВИЖИМОСТЬ</span>
+      </div>
+
+      <div class="tabs">
+        <button class="tab" [class.active]="activeTab === 'login'" (click)="switchTab('login')">
+          Вход
+        </button>
+        <button class="tab" [class.active]="activeTab === 'register'" (click)="switchTab('register')">
+          Регистрация
+        </button>
+      </div>
+
+      @if (activeTab === 'login') {
+        <form class="modal-form" (ngSubmit)="onLogin()">
+          <div class="field">
+            <label>Логин</label>
+            <input
+              type="text"
+              [(ngModel)]="loginForm.username"
+              name="username"
+              placeholder="Ваш логин"
+              autocomplete="username"
+              autocorrect="off"
+              autocapitalize="off"
+              spellcheck="false"
+            />
+          </div>
+          <div class="field">
+            <label>Пароль</label>
+            <div class="pwd-wrap">
+              <input
+                [type]="showLoginPwd ? 'text' : 'password'"
+                [(ngModel)]="loginForm.password"
+                name="password"
+                placeholder="Ваш пароль"
+                autocomplete="current-password"
+                autocorrect="off"
+                autocapitalize="off"
+              />
+              <button type="button" class="pwd-toggle" (click)="showLoginPwd = !showLoginPwd">
+                {{ showLoginPwd ? '🙈' : '👁' }}
+              </button>
+            </div>
+          </div>
+
+          @if (loginError) {
+            <div class="form-error">{{ loginError }}</div>
+          }
+
+          <button type="submit" class="btn-submit" [disabled]="isLoading">
+            @if (isLoading) { Вход... } @else { Войти }
+          </button>
+
+          <p class="switch-hint">
+            Нет аккаунта?
+            <button type="button" class="link-btn" (click)="switchTab('register')">
+              Зарегистрироваться
+            </button>
+          </p>
+        </form>
+      }
+
+      @if (activeTab === 'register') {
+        <form class="modal-form" (ngSubmit)="onRegister()">
+          <div class="field">
+            <label>Логин <span class="req">*</span></label>
+            <input
+              type="text"
+              [(ngModel)]="regForm.username"
+              name="username"
+              placeholder="Придумайте логин"
+              autocomplete="username"
+              autocorrect="off"
+              autocapitalize="off"
+              spellcheck="false"
+            />
+          </div>
+          <div class="field">
+            <label>Email <span class="req">*</span></label>
+            <input
+              type="email"
+              [(ngModel)]="regForm.email"
+              name="email"
+              placeholder="your@email.com"
+              autocomplete="email"
+              autocorrect="off"
+              autocapitalize="off"
+            />
+          </div>
+          <div class="field">
+            <label>Телефон</label>
+            <input
+              type="tel"
+              [(ngModel)]="regForm.phone"
+              name="phone"
+              placeholder="+7 (777) 000-00-00"
+            />
+          </div>
+          <div class="field">
+            <label>Пароль <span class="req">*</span></label>
+            <div class="pwd-wrap">
+              <input
+                [type]="showRegPwd ? 'text' : 'password'"
+                [(ngModel)]="regForm.password"
+                name="password"
+                placeholder="Минимум 6 символов"
+                autocomplete="new-password"
+                autocorrect="off"
+                autocapitalize="off"
+              />
+              <button type="button" class="pwd-toggle" (click)="showRegPwd = !showRegPwd">
+                {{ showRegPwd ? '🙈' : '👁' }}
+              </button>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Тип аккаунта</label>
+            <div class="role-selector">
+              <button
+                type="button"
+                class="role-btn"
+                [class.selected]="!regForm.is_agent"
+                (click)="regForm.is_agent = false"
+              >
+                <span class="role-icon">🔍</span>
+                <span class="role-name">Клиент</span>
+                <span class="role-desc">Ищу жильё</span>
+              </button>
+              <button
+                type="button"
+                class="role-btn"
+                [class.selected]="regForm.is_agent"
+                (click)="regForm.is_agent = true"
+              >
+                <span class="role-icon">🏠</span>
+                <span class="role-name">Продавец</span>
+                <span class="role-desc">Размещаю объявления</span>
+              </button>
+            </div>
+          </div>
+
+          @if (regSuccess) {
+            <div class="form-success">{{ regSuccess }}</div>
+          }
+          @if (regError) {
+            <div class="form-error">{{ regError }}</div>
+          }
+
+          <button type="submit" class="btn-submit" [disabled]="isLoading">
+            @if (isLoading) { Регистрация... } @else { Зарегистрироваться }
+          </button>
+
+          <p class="switch-hint">
+            Уже есть аккаунт?
+            <button type="button" class="link-btn" (click)="switchTab('login')">
+              Войти
+            </button>
+          </p>
+        </form>
+      }
+    </div>
+  </div>
+}

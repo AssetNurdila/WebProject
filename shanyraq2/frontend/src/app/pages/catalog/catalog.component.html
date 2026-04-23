@@ -1,0 +1,148 @@
+<div class="catalog-page">
+  <div class="page-header">
+    <div class="container">
+      <h1>Каталог объектов</h1>
+      <p class="subtitle">Элитная недвижимость Казахстана</p>
+    </div>
+  </div>
+
+  <div class="catalog-body container">
+    <aside class="filters-panel">
+      <div class="filters-title">Фильтры</div>
+
+      <div class="filter-group">
+        <label>Город</label>
+        <input
+          type="text"
+          [(ngModel)]="filters.city"
+          (keyup.enter)="onFilterChange()"
+          placeholder="Алматы, Астана..."
+          class="filter-input"
+        />
+      </div>
+
+      <div class="filter-group">
+        <label>Тип сделки</label>
+        <div class="pill-group">
+          <button
+            class="pill"
+            [class.active]="filters.listing_type === ''"
+            (click)="filters.listing_type = ''; onFilterChange()"
+          >Все</button>
+          <button
+            class="pill"
+            [class.active]="filters.listing_type === 'rent'"
+            (click)="filters.listing_type = 'rent'; onFilterChange()"
+          >Аренда</button>
+          <button
+            class="pill"
+            [class.active]="filters.listing_type === 'sale'"
+            (click)="filters.listing_type = 'sale'; onFilterChange()"
+          >Продажа</button>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <label>Цена, ₸</label>
+        <div class="price-row">
+          <input
+            type="number"
+            [(ngModel)]="filters.min_price"
+            (change)="onFilterChange()"
+            (keyup.enter)="onFilterChange()"
+            placeholder="от"
+            class="filter-input price-input"
+          />
+          <span class="price-sep">—</span>
+          <input
+            type="number"
+            [(ngModel)]="filters.max_price"
+            (change)="onFilterChange()"
+            (keyup.enter)="onFilterChange()"
+            placeholder="до"
+            class="filter-input price-input"
+          />
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <label>Комнат</label>
+        <div class="pill-group">
+          <button class="pill" [class.active]="filters.rooms === null" (click)="filters.rooms = null; onFilterChange()">Любое</button>
+          <button class="pill" [class.active]="filters.rooms === 1" (click)="filters.rooms = 1; onFilterChange()">1</button>
+          <button class="pill" [class.active]="filters.rooms === 2" (click)="filters.rooms = 2; onFilterChange()">2</button>
+          <button class="pill" [class.active]="filters.rooms === 3" (click)="filters.rooms = 3; onFilterChange()">3</button>
+          <button class="pill" [class.active]="filters.rooms === 4" (click)="filters.rooms = 4; onFilterChange()">4+</button>
+        </div>
+      </div>
+
+      <div class="filter-actions">
+        <button class="btn-apply" (click)="applyFilters()">Применить</button>
+        <button class="btn-reset" (click)="resetFilters()">Сбросить</button>
+      </div>
+    </aside>
+
+    <main class="listings-area">
+      <div class="top-bar">
+        <span class="results-count">
+          @if (!isLoading) {
+            <span>{{ viewMode === 'map' ? mapListings.length : listings.length }}</span> объявлений
+          }
+        </span>
+        <div class="view-toggle">
+          <button class="view-btn" [class.active]="viewMode === 'list'" (click)="setViewMode('list')">
+            <span class="view-icon">☰</span> Списком
+          </button>
+          <button class="view-btn" [class.active]="viewMode === 'map'" (click)="setViewMode('map')">
+            <span class="view-icon">⌖</span> На карте
+          </button>
+        </div>
+        @if (viewMode === 'list') {
+          <div class="sort-pills">
+            <button class="sort-pill" [class.active]="sortBy === 'date'" (click)="sortBy = 'date'; onSortChange()">По дате</button>
+            <button class="sort-pill" [class.active]="sortBy === 'price_asc'" (click)="sortBy = 'price_asc'; onSortChange()">Цена ↑</button>
+            <button class="sort-pill" [class.active]="sortBy === 'price_desc'" (click)="sortBy = 'price_desc'; onSortChange()">Цена ↓</button>
+          </div>
+        }
+      </div>
+
+      @if (viewMode === 'map') {
+        <div class="map-container">
+          <app-listings-map
+            [listings]="mapListings"
+            (boundsChanged)="onMapBoundsChanged($event)"
+          />
+        </div>
+      } @else if (isLoading) {
+        <div class="grid">
+          @for (s of skeletons; track s) {
+            <div class="skeleton-card">
+              <div class="sk-img shimmer"></div>
+              <div class="sk-body">
+                <div class="sk-line long shimmer"></div>
+                <div class="sk-line short shimmer"></div>
+                <div class="sk-line medium shimmer"></div>
+              </div>
+            </div>
+          }
+        </div>
+      } @else if (errorMessage) {
+        <div class="state-block">
+          <p class="error-msg">{{ errorMessage }}</p>
+          <button class="btn-apply" (click)="loadListings()">Повторить</button>
+        </div>
+      } @else if (listings.length === 0) {
+        <div class="state-block">
+          <p>Объявлений не найдено</p>
+          <button class="btn-reset" (click)="resetFilters()">Сбросить фильтры</button>
+        </div>
+      } @else {
+        <div class="grid">
+          @for (listing of listings; track listing.id) {
+            <app-listing-card [listing]="listing" />
+          }
+        </div>
+      }
+    </main>
+  </div>
+</div>

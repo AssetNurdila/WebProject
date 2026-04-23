@@ -1,0 +1,174 @@
+@if (isSeller) {
+  <section class="hero hero-seller">
+    <div class="hero-content">
+      <div class="hero-frame">
+        <div class="frame-corner tl"></div>
+        <div class="frame-corner tr"></div>
+        <div class="frame-corner bl"></div>
+        <div class="frame-corner br"></div>
+
+        <p class="hero-label">ДОБРО ПОЖАЛОВАТЬ &nbsp;·&nbsp; {{ currentUser?.username?.toUpperCase() }}</p>
+        <h1 class="hero-title seller-title">
+          ВАША<br />
+          НЕДВИЖИМОСТЬ —<br />
+          <span class="gold-text">ВАШ КАПИТАЛ</span>
+        </h1>
+        <p class="hero-tagline">Управляйте своими объектами. Привлекайте клиентов.</p>
+
+        <div class="hero-actions">
+          <a routerLink="/dashboard" [queryParams]="{section:'create'}" class="cta-primary">
+            + Добавить объект
+          </a>
+          <a routerLink="/dashboard" [queryParams]="{section:'listings'}" class="cta-secondary">
+            Мои объявления
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="seller-stats">
+    <div class="container">
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-number gold">{{ myListings.length }}</div>
+          <div class="stat-label">Всего объявлений</div>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <div class="stat-number">{{ activeCount }}</div>
+          <div class="stat-label">Активных</div>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <div class="stat-number">{{ myListings.length - activeCount }}</div>
+          <div class="stat-label">Скрытых</div>
+        </div>
+      </div>
+    </div>
+  </section>
+} @else {
+  <section class="hero">
+    <div class="hero-content">
+      <div class="hero-frame">
+        <div class="frame-corner tl"></div>
+        <div class="frame-corner tr"></div>
+        <div class="frame-corner bl"></div>
+        <div class="frame-corner br"></div>
+
+        <p class="hero-label">КАЗАХСТАН &nbsp;·&nbsp; ЭЛИТНАЯ НЕДВИЖИМОСТЬ</p>
+        <h1 class="hero-title">
+          ЭЛИТНАЯ<br />
+          НЕДВИЖИМОСТЬ<br />
+          КАЗАХСТАНА
+        </h1>
+        <p class="hero-tagline">Аренда. Покупка. Продажа.</p>
+
+        <div class="search-bar">
+          <input
+            type="text"
+            [(ngModel)]="searchQuery"
+            placeholder="Введите город или адрес..."
+            (keyup.enter)="onSearch()"
+          />
+          <button class="search-btn" (click)="onSearch()">Поиск</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="quick-filters">
+    <div class="container">
+      <button
+        class="filter-btn"
+        [class.active]="activeFilter === 'sale'"
+        (click)="filterByType('sale')"
+      >
+        Купить
+      </button>
+      <div class="filter-sep"></div>
+      <button
+        class="filter-btn"
+        [class.active]="activeFilter === 'rent'"
+        (click)="filterByType('rent')"
+      >
+        Арендовать
+      </button>
+      <div class="filter-sep"></div>
+      <button class="filter-btn" (click)="goToCreate()">Продать</button>
+    </div>
+  </section>
+}
+
+<section class="listings-section">
+  <div class="container">
+    <div class="section-header">
+      <h2>{{ isSeller ? 'Мои объявления' : 'Последние объявления' }}</h2>
+      @if (isSeller) {
+        <a routerLink="/dashboard" [queryParams]="{section:'listings'}" class="see-all">Все мои →</a>
+      } @else {
+        <a routerLink="/catalog" class="see-all">Смотреть все →</a>
+      }
+    </div>
+
+    @if (isLoading) {
+      <div class="grid">
+        @for (s of skeletons; track s) {
+          <div class="skeleton-card">
+            <div class="sk-img shimmer"></div>
+            <div class="sk-body">
+              <div class="sk-line long shimmer"></div>
+              <div class="sk-line short shimmer"></div>
+              <div class="sk-line medium shimmer"></div>
+            </div>
+          </div>
+        }
+      </div>
+    } @else if (errorMessage) {
+      <div class="error-block">
+        <p>{{ errorMessage }}</p>
+        <button class="btn-outline" (click)="loadListings()">Повторить</button>
+      </div>
+    } @else if (isSeller && myListings.length === 0) {
+      <div class="seller-empty">
+        <div class="seller-empty-icon">🏠</div>
+        <h3>У вас ещё нет объявлений</h3>
+        <p>Создайте первое объявление и начните получать заявки от клиентов.</p>
+        <a routerLink="/dashboard" [queryParams]="{section:'create'}" class="cta-primary">
+          Добавить первый объект
+        </a>
+      </div>
+    } @else if (!isSeller && listings.length === 0) {
+      <p class="empty-msg">Объявлений пока нет</p>
+    } @else {
+      <div class="grid">
+        @for (listing of (isSeller ? myListings.slice(0,6) : listings); track listing.id) {
+          <app-listing-card [listing]="listing" />
+        }
+      </div>
+    }
+  </div>
+</section>
+
+@if (!isSeller) {
+  <section class="stats-section">
+    <div class="container">
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-number">500+</div>
+          <div class="stat-label">Объектов</div>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <div class="stat-number">12</div>
+          <div class="stat-label">Городов</div>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <div class="stat-number">98%</div>
+          <div class="stat-label">Довольных клиентов</div>
+        </div>
+      </div>
+    </div>
+  </section>
+}

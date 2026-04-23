@@ -1,0 +1,47 @@
+<div class="card" (click)="goToListing()">
+  <div class="card-image">
+    @if (mainImage) {
+      <img [src]="mainImage" [alt]="listing.title" />
+    } @else {
+      <div class="no-image">НЕТ ФОТО</div>
+    }
+
+    <div class="image-gradient"></div>
+
+    <span class="badge" [class.badge-rent]="listing.listing_type === 'rent'" [class.badge-sale]="listing.listing_type === 'sale'">
+      {{ listing.listing_type === 'rent' ? 'АРЕНДА' : 'ПРОДАЖА' }}
+    </span>
+
+    <button class="btn-fav" [class.active]="isFavorited" (click)="toggleFavorite($event)" title="В избранное">
+      {{ isFavorited ? '♥' : '♡' }}
+    </button>
+
+    <div class="price-overlay">{{ priceLabel }}</div>
+  </div>
+
+  <div class="card-body">
+    <h3 class="title">{{ listing.title }}</h3>
+
+    <div class="specs">
+      <span class="spec-item">
+        <span class="spec-val">{{ listing.rooms }}</span>
+        <span class="spec-label">комн</span>
+      </span>
+      <span class="spec-divider"></span>
+      <span class="spec-item">
+        <span class="spec-val">{{ listing.area }}</span>
+        <span class="spec-label">м²</span>
+      </span>
+      <span class="spec-divider"></span>
+      <span class="spec-item">
+        <span class="spec-val">{{ listing.floor }}</span>
+        <span class="spec-label">эт</span>
+      </span>
+    </div>
+
+    <div class="card-footer">
+      <span class="address">{{ listing.city }}, {{ listing.address }}</span>
+      <span class="owner">{{ listing.owner?.username }}</span>
+    </div>
+  </div>
+</div>

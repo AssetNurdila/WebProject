@@ -1,0 +1,328 @@
+<div class="dashboard no-sidebar">
+  <main class="content full-width">
+    @if (activeSection === 'favorites') {
+      <div class="section">
+        <div class="section-head">
+          <h2>Избранное</h2>
+        </div>
+        <div class="client-welcome">
+          <div class="role-badge client">Клиент</div>
+          <p class="role-desc">
+            Вы зарегистрированы как <strong>покупатель / арендатор</strong>.
+            Добавляйте объявления в избранное и просматривайте каталог.
+          </p>
+          <a routerLink="/catalog" class="btn-go-catalog">Перейти в каталог</a>
+        </div>
+      </div>
+    }
+
+    @if (activeSection === 'listings') {
+      <div class="section">
+        <div class="section-head">
+          <h2>Мои объявления</h2>
+          <button class="btn-gold-sm" (click)="activeSection = 'create'">+ Добавить</button>
+        </div>
+
+        @if (isLoadingListings) {
+          <div class="loading-msg">Загрузка...</div>
+        } @else if (listingsError) {
+          <div class="error-msg">{{ listingsError }}</div>
+        } @else if (myListings.length === 0) {
+          <div class="empty-state">
+            <p>У вас нет объявлений</p>
+            <button class="btn-gold-sm" (click)="activeSection = 'create'">
+              Добавить первое
+            </button>
+          </div>
+        } @else {
+          <div class="listings-table">
+            <div class="table-header">
+              <span>Объявление</span>
+              <span>Цена</span>
+              <span>Статус</span>
+              <span>Действия</span>
+            </div>
+            @for (listing of myListings; track listing.id) {
+              <div class="table-row">
+                <div class="row-title">
+                  <span class="type-badge" [class.rent]="listing.listing_type === 'rent'">
+                    {{ listing.listing_type === 'rent' ? 'Аренда' : 'Продажа' }}
+                  </span>
+                  <span>{{ listing.title }}</span>
+                </div>
+                <div class="row-price">{{ formatPrice(listing.price) }}</div>
+                <div class="row-status">
+                  <span class="status" [class.active]="listing.is_active">
+                    {{ listing.is_active ? 'Активно' : 'Неактивно' }}
+                  </span>
+                </div>
+                <div class="row-actions">
+                  <button class="action-btn" (click)="goToEdit(listing.id)" title="Просмотр">
+                    &#9654;
+                  </button>
+                  <button
+                    class="action-btn toggle"
+                    (click)="toggleActive(listing)"
+                    title="Вкл/выкл"
+                  >
+                    &#9696;
+                  </button>
+                  <button
+                    class="action-btn delete"
+                    (click)="deleteListing(listing.id)"
+                    title="Удалить"
+                  >
+                    &#10005;
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+
+    @if (activeSection === 'create') {
+      <div class="section create-section">
+        <div class="create-hero">
+          <div class="create-hero-label">Новое объявление</div>
+          <h2 class="create-hero-title">Добавить объект</h2>
+          <p class="create-hero-subtitle">Заполните информацию о вашей недвижимости</p>
+        </div>
+
+        @if (createSuccess) {
+          <div class="success-msg">✓ Объявление успешно опубликовано</div>
+        }
+
+        <form class="create-form" (ngSubmit)="onCreateListing()">
+          <div class="form-block">
+            <div class="form-block-head">
+              <span class="form-block-num">01</span>
+              <span class="form-block-title">Основное</span>
+            </div>
+
+            <div class="field">
+              <label>Заголовок <span class="req">*</span></label>
+              <input type="text" [(ngModel)]="newListing.title" name="title"
+                placeholder="Например: 3-комнатная квартира в центре" />
+            </div>
+
+            <div class="field">
+              <label>Тип сделки</label>
+              <div class="type-toggle">
+                <button type="button" class="type-btn" [class.active]="newListing.listing_type === 'rent'" (click)="newListing.listing_type = 'rent'">
+                  Аренда
+                </button>
+                <button type="button" class="type-btn" [class.active]="newListing.listing_type === 'sale'" (click)="newListing.listing_type = 'sale'">
+                  Продажа
+                </button>
+              </div>
+            </div>
+
+            <div class="field">
+              <label>Описание</label>
+              <textarea [(ngModel)]="newListing.description" name="description" rows="4"
+                placeholder="Расскажите о вашем объекте — преимущества, инфраструктура, состояние..."></textarea>
+            </div>
+          </div>
+
+          <div class="form-block">
+            <div class="form-block-head">
+              <span class="form-block-num">02</span>
+              <span class="form-block-title">Характеристики</span>
+            </div>
+
+            <div class="form-row">
+              <div class="field">
+                <label>Цена, ₸ <span class="req">*</span></label>
+                <input type="number" [(ngModel)]="newListing.price" name="price" placeholder="0" />
+              </div>
+              <div class="field">
+                <label>Площадь, м²</label>
+                <input type="number" [(ngModel)]="newListing.area" name="area" placeholder="0" />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="field">
+                <label>Комнат</label>
+                <input type="number" [(ngModel)]="newListing.rooms" name="rooms" placeholder="1" />
+              </div>
+              <div class="field">
+                <label>Этаж</label>
+                <input type="number" [(ngModel)]="newListing.floor" name="floor" placeholder="1" />
+              </div>
+            </div>
+          </div>
+
+          <div class="form-block">
+            <div class="form-block-head">
+              <span class="form-block-num">03</span>
+              <span class="form-block-title">Адрес</span>
+            </div>
+
+            <div class="form-row">
+              <div class="field">
+                <label>Город <span class="req">*</span></label>
+                <input type="text" [(ngModel)]="newListing.city" name="city" placeholder="Алматы" />
+              </div>
+              <div class="field">
+                <label>Адрес <span class="req">*</span></label>
+                <input type="text" [(ngModel)]="newListing.address" name="address" placeholder="ул. Абая, 10" />
+              </div>
+            </div>
+          </div>
+
+          <div class="form-block">
+            <div class="form-block-head">
+              <span class="form-block-num">04</span>
+              <span class="form-block-title">Местоположение на карте</span>
+            </div>
+            <p class="form-block-hint">
+              Поставьте метку вручную на карте или используйте поиск — так покупатели точно найдут ваш объект.
+              Если оставить пустым, координаты подтянутся автоматически по адресу.
+            </p>
+            <app-map-picker
+              [latitude]="newListing.latitude"
+              [longitude]="newListing.longitude"
+              [searchQuery]="mapSearchQuery"
+              (locationChange)="onPickLocation($event)"
+            />
+          </div>
+
+          @if (createError) {
+            <div class="error-msg">{{ createError }}</div>
+          }
+
+          <div class="form-actions">
+            <button type="button" class="btn-cancel-form" (click)="activeSection = 'listings'">
+              Отмена
+            </button>
+            <button type="submit" class="btn-submit" [disabled]="isCreating">
+              @if (isCreating) { Публикация... } @else { Опубликовать объявление }
+            </button>
+          </div>
+        </form>
+      </div>
+    }
+
+    @if (activeSection === 'profile') {
+      <div class="section">
+        <div class="section-head">
+          <h2>Мой профиль</h2>
+          @if (!profileEditing) {
+            <button class="btn-gold-sm" (click)="profileEditing = true; profileError = ''">
+              Редактировать
+            </button>
+          }
+        </div>
+
+        <div class="profile-layout">
+          <div class="profile-left">
+            <label class="avatar-upload-wrap" title="{{ currentUser?.avatar ? 'Сменить фото' : 'Добавить аватар' }}">
+              @if (avatarPreview) {
+                <img class="profile-avatar-img zoom-on-hover" [src]="avatarPreview" alt="avatar" />
+              } @else if (currentUser?.avatar) {
+                <img class="profile-avatar-img zoom-on-hover" [src]="currentUser?.avatar" alt="avatar" />
+              } @else {
+                <div class="profile-avatar-big">
+                  {{ currentUser?.username?.slice(0,2)?.toUpperCase() ?? '?' }}
+                </div>
+              }
+              <div class="avatar-overlay">
+                {{ currentUser?.avatar || avatarPreview ? '📷' : '+ Фото' }}
+              </div>
+              <input type="file" accept="image/*" class="avatar-file-input" (change)="onAvatarSelect($event)" />
+            </label>
+            <div class="profile-username">{{ currentUser?.username }}</div>
+            <div class="profile-role-badge" [class.seller]="currentUser?.is_agent">
+              {{ currentUser?.is_agent ? '🏠 Продавец' : '🔍 Клиент' }}
+            </div>
+            @if (avatarPreview) {
+              <button class="btn-save-avatar" (click)="saveAvatarOnly(); $event.stopPropagation()">
+                Сохранить фото
+              </button>
+            }
+            @if (profileSaved && !profileEditing) {
+              <span class="avatar-saved-msg">✓ Сохранено</span>
+            }
+            @if (avatarError) {
+              <span class="avatar-error-msg">{{ avatarError }}</span>
+            }
+          </div>
+
+          <div class="profile-right">
+            @if (!profileEditing) {
+              <div class="info-grid">
+                <div class="info-item">
+                  <span class="info-label">Логин</span>
+                  <span class="info-val">{{ currentUser?.username }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Email</span>
+                  <span class="info-val">{{ currentUser?.email || '—' }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Телефон</span>
+                  <span class="info-val">{{ currentUser?.phone || '—' }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Тип аккаунта</span>
+                  <span class="info-val">{{ currentUser?.is_agent ? 'Продавец' : 'Клиент' }}</span>
+                </div>
+              </div>
+              @if (profileSaved) {
+                <div class="profile-success">✓ Профиль успешно сохранён</div>
+              }
+            } @else {
+              <form class="profile-edit-form" (ngSubmit)="saveProfile()">
+                <div class="edit-field">
+                  <label>Логин</label>
+                  <input
+                    type="text"
+                    [(ngModel)]="profileForm.username"
+                    name="username"
+                    autocorrect="off"
+                    autocapitalize="off"
+                    spellcheck="false"
+                  />
+                </div>
+                <div class="edit-field">
+                  <label>Телефон</label>
+                  <input
+                    type="tel"
+                    [(ngModel)]="profileForm.phone"
+                    name="phone"
+                    placeholder="+7 (777) 000-00-00"
+                  />
+                </div>
+                <div class="edit-field">
+                  <label>Email</label>
+                  <input
+                    type="text"
+                    [value]="currentUser?.email"
+                    disabled
+                  />
+                  <span class="edit-hint">Email изменить нельзя</span>
+                </div>
+                @if (profileError) {
+                  <div class="error-msg">{{ profileError }}</div>
+                }
+                <div class="edit-actions">
+                  <button type="submit" class="btn-gold-sm">Сохранить</button>
+                  <button
+                    type="button"
+                    class="btn-cancel"
+                    (click)="profileEditing = false; profileError = ''"
+                  >
+                    Отмена
+                  </button>
+                </div>
+              </form>
+            }
+          </div>
+        </div>
+      </div>
+    }
+  </main>
+</div>

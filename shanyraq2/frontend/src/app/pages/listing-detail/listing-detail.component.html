@@ -1,0 +1,126 @@
+<div class="detail-page">
+  @if (toastMessage) {
+    <div class="toast">{{ toastMessage }}</div>
+  }
+
+  @if (isLoading) {
+    <div class="loading-wrap">
+      <div class="sk-gallery shimmer"></div>
+      <div class="sk-info">
+        <div class="sk-line xl shimmer"></div>
+        <div class="sk-line lg shimmer"></div>
+        <div class="sk-line md shimmer"></div>
+      </div>
+    </div>
+  } @else if (errorMessage) {
+    <div class="error-wrap">
+      <p>{{ errorMessage }}</p>
+      <a routerLink="/catalog" class="btn-back">← Вернуться в каталог</a>
+    </div>
+  } @else if (listing) {
+    <div class="detail-container container">
+      <a routerLink="/catalog" class="back-link">← Каталог</a>
+
+      <div class="detail-main">
+        <div class="gallery">
+          <div class="main-photo">
+            @if (activeImage) {
+              <img [src]="activeImage.image" [alt]="listing.title" />
+            } @else {
+              <div class="no-photo">НЕТ ФОТО</div>
+            }
+            <span
+              class="type-badge"
+              [class.rent]="listing.listing_type === 'rent'"
+            >
+              {{ listing.listing_type === 'rent' ? 'Аренда' : 'Продажа' }}
+            </span>
+          </div>
+
+          @if ((listing.images?.length ?? 0) > 1) {
+            <div class="thumbnails">
+              @for (img of listing.images; track img.id) {
+                <div
+                  class="thumb"
+                  [class.active]="activeImage?.id === img.id"
+                  (click)="selectImage(img)"
+                >
+                  <img [src]="img.image" [alt]="listing.title" />
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="info-panel">
+          <div class="info-price">{{ formattedPrice }}</div>
+          <h1 class="info-title">{{ listing.title }}</h1>
+
+          <div class="info-specs">
+            <div class="spec-item">
+              <span class="spec-val">{{ listing.rooms }}</span>
+              <span class="spec-lbl">комнат</span>
+            </div>
+            <div class="spec-div"></div>
+            <div class="spec-item">
+              <span class="spec-val">{{ listing.area }}</span>
+              <span class="spec-lbl">м²</span>
+            </div>
+            <div class="spec-div"></div>
+            <div class="spec-item">
+              <span class="spec-val">{{ listing.floor }}</span>
+              <span class="spec-lbl">этаж</span>
+            </div>
+          </div>
+
+          <div class="info-address">
+            <span class="addr-icon">&#9679;</span>
+            {{ listing.city }}, {{ listing.address }}
+          </div>
+
+          <div class="info-desc">
+            <div class="desc-label">Описание</div>
+            <p>{{ listing.description || 'Описание не указано' }}</p>
+          </div>
+
+          <div class="info-contacts">
+            <div class="contacts-label">Контакты</div>
+            <div class="contact-name">{{ listing.owner?.username }}</div>
+            @if (isLoggedIn) {
+              <div class="contact-phone">{{ listing.owner?.phone || 'Телефон не указан' }}</div>
+            } @else {
+              <a routerLink="/auth" class="contact-login">
+                Войдите, чтобы увидеть контакты
+              </a>
+            }
+          </div>
+
+          <div class="action-buttons">
+            <button
+              class="btn-favorite"
+              [class.favorited]="isFavorited"
+              (click)="toggleFavorite()"
+            >
+              {{ isFavorited ? '♥ В избранном' : '♡ В избранное' }}
+            </button>
+
+            @if (isOwner) {
+              <button class="btn-delete" (click)="deleteListing()">Удалить</button>
+            }
+          </div>
+        </div>
+      </div>
+
+      @if (similarListings.length > 0) {
+        <div class="similar-section">
+          <h3>Похожие объявления</h3>
+          <div class="similar-grid">
+            @for (item of similarListings; track item.id) {
+              <app-listing-card [listing]="item" />
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>
