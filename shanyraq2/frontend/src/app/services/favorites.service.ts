@@ -1,6 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { Listing } from '../models/interfaces';
 
 @Injectable({ providedIn: 'root' })
 export class FavoritesService {
@@ -12,5 +13,9 @@ export class FavoritesService {
 
   remove(listingId: number): Observable<any> {
     return this.http.delete(`/api/favorites/${listingId}/`);
+  }
+
+  getAll(): Observable<Listing[]> {
+    return this.http.get<Listing[]>('/api/favorites/');
   }
 }

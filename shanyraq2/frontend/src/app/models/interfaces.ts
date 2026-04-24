@@ -31,6 +31,7 @@ export interface Listing {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  is_favorited?: boolean;
 }
 
 export interface MapListing {
@@ -45,6 +46,7 @@ export interface MapListing {
   latitude: number;
   longitude: number;
   main_image: string | null;
+  is_favorited?: boolean;
 }
 
 export interface MapBounds {

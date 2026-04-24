@@ -37,7 +37,7 @@
             </span>
           </div>
 
-          @if ((listing.images?.length ?? 0) > 1) {
+          @if (listing.images.length > 1) {
             <div class="thumbnails">
               @for (img of listing.images; track img.id) {
                 <div
@@ -85,9 +85,9 @@
 
           <div class="info-contacts">
             <div class="contacts-label">Контакты</div>
-            <div class="contact-name">{{ listing.owner?.username }}</div>
+            <div class="contact-name">{{ listing.owner.username }}</div>
             @if (isLoggedIn) {
-              <div class="contact-phone">{{ listing.owner?.phone || 'Телефон не указан' }}</div>
+              <div class="contact-phone">{{ listing.owner.phone || 'Телефон не указан' }}</div>
             } @else {
               <a routerLink="/auth" class="contact-login">
                 Войдите, чтобы увидеть контакты

@@ -11,18 +11,30 @@ import threading
 def _geocode_listing(listing_id, city, address):
     try:
         from geopy.geocoders import Nominatim
-        geolocator = Nominatim(user_agent="shanyrak-real-estate", timeout=5)
-        # Улучшение поискового запроса
+        from geopy.exc import GeocoderRateLimited
+        from django.db import transaction
+        import time
+
+        geolocator = Nominatim(user_agent="shanyrak-real-estate", timeout=10)
         query = f"Казахстан, {city}, {address}"
-        location = geolocator.geocode(query)
+        location = None
+        
+        for attempt in range(3):
+            try:
+                location = geolocator.geocode(query)
+                break
+            except GeocoderRateLimited:
+                time.sleep(2 ** attempt)
+
         if location:
-            # Безопасное сохранение в потоке
-            Listing.all_objects.filter(pk=listing_id).update(
-                latitude=location.latitude,
-                longitude=location.longitude
-            )
+            with transaction.atomic():
+                Listing.all_objects.filter(pk=listing_id).update(
+                    latitude=location.latitude,
+                    longitude=location.longitude
+                )
+        else:
+            logger.error("Geocoding returned no result for listing %s", listing_id)
     except Exception as exc:
-        # Обработка ошибок
         logger.warning("Geocoding failed for listing %s: %s", listing_id, exc)
 
 
@@ -66,6 +78,14 @@ class Listing(models.Model):
         indexes = [
             models.Index(fields=['city', 'listing_type', 'price'], name='listing_filter_idx'),
             models.Index(models.functions.Upper('city'), name='listing_city_upper_idx'),
+            models.Index(fields=['price'], condition=models.Q(is_active=True), name='listing_price_active_idx'),
+            models.Index(fields=['rooms', 'price'], condition=models.Q(is_active=True), name='listing_rooms_price_idx'),
+            models.Index(
+                fields=['latitude', 'longitude'],
+                condition=models.Q(latitude__isnull=False, longitude__isnull=False, is_active=True),
+                name='listing_geo_idx'
+            ),
+            models.Index(fields=['owner', '-created_at'], name='listing_owner_date_idx'),
         ]
 
     def __str__(self) -> str:
@@ -74,7 +94,7 @@ class Listing(models.Model):
     def save(self, *args, **kwargs):
         is_new = self.pk is None
         # Приоритет ручного ввода: не запускаем, если координаты уже есть
-        needs_geocoding = not self.latitude or not self.longitude
+        needs_geocoding = self.latitude is None or self.longitude is None
 
         super().save(*args, **kwargs)
 

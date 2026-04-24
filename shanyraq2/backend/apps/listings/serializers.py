@@ -28,6 +28,7 @@ class ListingImageSerializer(serializers.ModelSerializer):
 class ListingSerializer(serializers.ModelSerializer):
     images = ListingImageSerializer(many=True, read_only=True)
     owner = UserProfileSerializer(read_only=True)
+    is_favorited = serializers.SerializerMethodField()
 
     class Meta:
         model = Listing
@@ -49,12 +50,26 @@ class ListingSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
             "images",
+            "is_favorited",
         )
         read_only_fields = ("owner", "created_at", "updated_at")
 
 
+    def get_is_favorited(self, obj):
+        if hasattr(obj, '_is_favorited_cache'):
+            return obj._is_favorited_cache
+            
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            # Check if favorited_by__user is prefetched, otherwise hit DB
+            if hasattr(obj, '_prefetched_objects_cache') and 'favorited_by' in obj._prefetched_objects_cache:
+                return any(fav.user_id == request.user.id for fav in obj.favorited_by.all())
+            return obj.favorited_by.filter(user=request.user).exists()
+        return False
+
 class MapListingSerializer(serializers.ModelSerializer):
     main_image = serializers.SerializerMethodField()
+    is_favorited = serializers.SerializerMethodField()
 
     class Meta:
         model = Listing
@@ -70,7 +85,14 @@ class MapListingSerializer(serializers.ModelSerializer):
             "latitude",
             "longitude",
             "main_image",
+            "is_favorited",
         )
+
+    def get_is_favorited(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.favorited_by.filter(user=request.user).exists()
+        return False
 
     def get_main_image(self, obj):
         images = list(obj.images.all())

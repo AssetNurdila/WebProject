@@ -1,5 +1,7 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, DestroyRef } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { switchMap, EMPTY, catchError, of } from 'rxjs';
 import { ListingsService } from '../../services/listings.service';
 import { FavoritesService } from '../../services/favorites.service';
 import { AuthService } from '../../services/auth.service';
@@ -14,6 +16,7 @@ import { ListingCardComponent } from '../../components/listing-card/listing-card
   styleUrl: './listing-detail.component.css',
 })
 export class ListingDetailComponent implements OnInit {
+  private destroyRef = inject(DestroyRef);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private listingsService = inject(ListingsService);
@@ -47,31 +50,36 @@ export class ListingDetailComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.route.params.subscribe((params) => {
-      const id = Number(params['id']);
-      if (id) this.loadListing(id);
-    });
-  }
-
-  loadListing(id: number): void {
-    this.isLoading = true;
-    this.errorMessage = '';
-    this.listingsService.getById(id).subscribe({
+    this.route.params.pipe(
+      takeUntilDestroyed(this.destroyRef),
+      switchMap(params => {
+        const id = Number(params['id']);
+        if (!id) return EMPTY;
+        this.isLoading = true;
+        this.errorMessage = '';
+        return this.listingsService.getById(id).pipe(
+          catchError(() => {
+            this.errorMessage = 'Объявление не найдено';
+            this.isLoading = false;
+            return EMPTY;
+          })
+        );
+      })
+    ).subscribe({
       next: (listing) => {
         this.listing = listing;
         this.activeImage = listing.images?.find((i) => i.is_main) ?? listing.images?.[0] ?? null;
+        this.isFavorited = !!listing.is_favorited;
         this.isLoading = false;
         this.loadSimilar(listing.city, listing.id);
-      },
-      error: () => {
-        this.errorMessage = 'Объявление не найдено';
-        this.isLoading = false;
-      },
+      }
     });
   }
 
   loadSimilar(city: string, excludeId: number): void {
-    this.listingsService.getAll({ city }).subscribe({
+    this.listingsService.getAll({ city }).pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe({
       next: (response) => {
         const data = response.results;
         this.similarListings = data.filter((l) => l.id !== excludeId).slice(0, 3);

@@ -7,16 +7,20 @@ import { ListingsService } from '../../services/listings.service';
 import { Listing, User } from '../../models/interfaces';
 import { MapPickerComponent, PickedLocation } from '../../components/map-picker/map-picker.component';
 
+import { FavoritesService } from '../../services/favorites.service';
+import { ListingCardComponent } from '../../components/listing-card/listing-card.component';
+
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [FormsModule, RouterLink, MapPickerComponent],
+  imports: [FormsModule, RouterLink, MapPickerComponent, ListingCardComponent],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css',
 })
 export class DashboardComponent implements OnInit {
   private authService = inject(AuthService);
   private listingsService = inject(ListingsService);
+  private favoritesService = inject(FavoritesService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private zone = inject(NgZone);
@@ -28,6 +32,10 @@ export class DashboardComponent implements OnInit {
   myListings: Listing[] = [];
   isLoadingListings = true;
   listingsError = '';
+
+  favoriteListings: Listing[] = [];
+  isLoadingFavorites = true;
+  favoritesError = '';
 
   profileForm = { username: '', phone: '' };
   profileSaved = false;
@@ -90,6 +98,24 @@ export class DashboardComponent implements OnInit {
     ).subscribe((params) => {
       const section = params.get('section') as any;
       if (section) this.activeSection = section;
+      if (this.activeSection === 'favorites') {
+        this.loadFavorites();
+      }
+    });
+  }
+
+  loadFavorites(): void {
+    this.isLoadingFavorites = true;
+    this.favoritesError = '';
+    this.favoritesService.getAll().subscribe({
+      next: (data) => {
+        this.favoriteListings = data;
+        this.isLoadingFavorites = false;
+      },
+      error: () => {
+        this.favoritesError = 'Не удалось загрузить избранное';
+        this.isLoadingFavorites = false;
+      }
     });
   }
 

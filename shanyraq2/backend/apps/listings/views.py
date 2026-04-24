@@ -77,7 +77,8 @@ class ListingDetailView(APIView):
         return [AllowAny()]
 
     def get_object(self, pk):
-        return get_object_or_404(Listing.all_objects, pk=pk)
+        queryset = Listing.all_objects.select_related("owner").prefetch_related("images")
+        return get_object_or_404(queryset, pk=pk)
 
     def get(self, request, pk):
         listing = self.get_object(pk)
@@ -204,4 +205,28 @@ class MyListingsView(APIView):
             .order_by('-created_at')
         )
         serializer = ListingSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+
+class MyFavoritesView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        favorites = (
+            Favorite.objects.filter(user=request.user)
+            .select_related("listing", "listing__owner")
+            .prefetch_related("listing__images")
+            .order_by("-created_at")
+        )
+        
+        # Extract active listings only, preserving the created_at order
+        listings = [
+            fav.listing for fav in favorites if fav.listing.is_active
+        ]
+        
+        # Add the is_favorited flag manually since we already know they are favorited
+        for lst in listings:
+            lst._is_favorited_cache = True
+            
+        serializer = ListingSerializer(listings, many=True, context={'request': request})
         return Response(serializer.data)
