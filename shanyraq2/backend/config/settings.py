@@ -18,9 +18,12 @@ except ImportError:
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = config("SECRET_KEY", default="django-insecure-change-me")
-DEBUG = config("DEBUG", default=True, cast=bool)
-ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="", cast=lambda v: [s for s in v.split(",") if s])
+import dj_database_url
+from decouple import config
+
+SECRET_KEY = config("SECRET_KEY")
+DEBUG = config("DEBUG", default=False, cast=bool)
+ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="*", cast=lambda v: [s for s in v.split(",") if s])
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -35,6 +38,7 @@ INSTALLED_APPS = [
     "apps.users",
     "apps.listings",
     "apps.chat",
+    "apps.bookings",
 ]
 
 MIDDLEWARE = [
@@ -70,10 +74,11 @@ WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
 
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
+    "default": dj_database_url.config(
+        default="sqlite:///" + str(BASE_DIR / "db.sqlite3"),
+        conn_max_age=600,
+        conn_health_checks=True,
+    )
 }
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -120,4 +125,4 @@ SIMPLE_JWT = {
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
-GEMINI_API_KEY = config("GEMINI_API_KEY", default="AIzaSyBlNIVjTqOOwF7M2uTcgCr27Zba4ac-g_Y")
+GEMINI_API_KEY = config("GEMINI_API_KEY")

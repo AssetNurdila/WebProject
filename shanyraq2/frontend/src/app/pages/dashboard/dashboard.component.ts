@@ -1,4 +1,5 @@
-import { Component, inject, OnInit, NgZone } from '@angular/core';
+import { Component, inject, OnInit, NgZone, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
@@ -19,6 +20,7 @@ export class DashboardComponent implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private zone = inject(NgZone);
+  private destroyRef = inject(DestroyRef);
 
   activeSection: 'listings' | 'create' | 'profile' | 'favorites' = 'listings';
 
@@ -68,7 +70,9 @@ export class DashboardComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.authService.currentUser$.subscribe((user) => {
+    this.authService.currentUser$.pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe((user) => {
       this.currentUser = user;
       if (user) {
         this.profileForm.username = user.username;
@@ -81,7 +85,9 @@ export class DashboardComponent implements OnInit {
       }
     });
 
-    this.route.queryParamMap.subscribe((params) => {
+    this.route.queryParamMap.pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe((params) => {
       const section = params.get('section') as any;
       if (section) this.activeSection = section;
     });
@@ -90,9 +96,9 @@ export class DashboardComponent implements OnInit {
   loadMyListings(userId: number): void {
     this.isLoadingListings = true;
     this.listingsError = '';
-    this.listingsService.getAll().subscribe({
+    this.listingsService.getMyListings().subscribe({
       next: (data) => {
-        this.myListings = data.filter((l) => l.owner?.id === userId);
+        this.myListings = data;
         this.isLoadingListings = false;
       },
       error: () => {

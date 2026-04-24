@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from apps.listings.models import Listing, ListingImage
+from apps.users.serializers import UserProfileSerializer
 
 
 class ListingFilterSerializer(serializers.Serializer):
@@ -15,6 +16,7 @@ class ListingFilterSerializer(serializers.Serializer):
         max_digits=12, decimal_places=2, required=False
     )
     rooms = serializers.IntegerField(required=False, min_value=1)
+    min_rooms = serializers.IntegerField(required=False, min_value=1)
 
 
 class ListingImageSerializer(serializers.ModelSerializer):
@@ -25,6 +27,7 @@ class ListingImageSerializer(serializers.ModelSerializer):
 
 class ListingSerializer(serializers.ModelSerializer):
     images = ListingImageSerializer(many=True, read_only=True)
+    owner = UserProfileSerializer(read_only=True)
 
     class Meta:
         model = Listing
@@ -70,7 +73,8 @@ class MapListingSerializer(serializers.ModelSerializer):
         )
 
     def get_main_image(self, obj):
-        img = obj.images.filter(is_main=True).first() or obj.images.first()
+        images = list(obj.images.all())
+        img = next((i for i in images if i.is_main), None) or (images[0] if images else None)
         if img and img.image:
             request = self.context.get("request")
             url = img.image.url

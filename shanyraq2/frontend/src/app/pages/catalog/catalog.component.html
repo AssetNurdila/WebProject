@@ -48,7 +48,7 @@
           <input
             type="number"
             [(ngModel)]="filters.min_price"
-            (change)="onFilterChange()"
+            (input)="onFilterChange()"
             (keyup.enter)="onFilterChange()"
             placeholder="от"
             class="filter-input price-input"
@@ -57,7 +57,7 @@
           <input
             type="number"
             [(ngModel)]="filters.max_price"
-            (change)="onFilterChange()"
+            (input)="onFilterChange()"
             (keyup.enter)="onFilterChange()"
             placeholder="до"
             class="filter-input price-input"
@@ -68,11 +68,11 @@
       <div class="filter-group">
         <label>Комнат</label>
         <div class="pill-group">
-          <button class="pill" [class.active]="filters.rooms === null" (click)="filters.rooms = null; onFilterChange()">Любое</button>
-          <button class="pill" [class.active]="filters.rooms === 1" (click)="filters.rooms = 1; onFilterChange()">1</button>
-          <button class="pill" [class.active]="filters.rooms === 2" (click)="filters.rooms = 2; onFilterChange()">2</button>
-          <button class="pill" [class.active]="filters.rooms === 3" (click)="filters.rooms = 3; onFilterChange()">3</button>
-          <button class="pill" [class.active]="filters.rooms === 4" (click)="filters.rooms = 4; onFilterChange()">4+</button>
+          <button class="pill" [class.active]="filters.rooms === null && filters.min_rooms === null" (click)="filters.rooms = null; filters.min_rooms = null; onFilterChange()">Любое</button>
+          <button class="pill" [class.active]="filters.rooms === 1" (click)="filters.rooms = 1; filters.min_rooms = null; onFilterChange()">1</button>
+          <button class="pill" [class.active]="filters.rooms === 2" (click)="filters.rooms = 2; filters.min_rooms = null; onFilterChange()">2</button>
+          <button class="pill" [class.active]="filters.rooms === 3" (click)="filters.rooms = 3; filters.min_rooms = null; onFilterChange()">3</button>
+          <button class="pill" [class.active]="filters.min_rooms === 4" (click)="filters.rooms = null; filters.min_rooms = 4; onFilterChange()">4+</button>
         </div>
       </div>
 

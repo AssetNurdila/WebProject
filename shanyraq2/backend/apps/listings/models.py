@@ -6,19 +6,24 @@ from django.db import models
 logger = logging.getLogger(__name__)
 
 
-def geocode_address(city: str, address: str):
+import threading
+
+def _geocode_listing(listing_id, city, address):
     try:
         from geopy.geocoders import Nominatim
-        from geopy.exc import GeopyError
-
         geolocator = Nominatim(user_agent="shanyrak-real-estate", timeout=5)
-        query = f"{address}, {city}, Kazakhstan"
+        # Улучшение поискового запроса
+        query = f"Казахстан, {city}, {address}"
         location = geolocator.geocode(query)
         if location:
-            return location.latitude, location.longitude
+            # Безопасное сохранение в потоке
+            Listing.all_objects.filter(pk=listing_id).update(
+                latitude=location.latitude,
+                longitude=location.longitude
+            )
     except Exception as exc:
-        logger.warning("Geocoding failed: %s", exc)
-    return None, None
+        # Обработка ошибок
+        logger.warning("Geocoding failed for listing %s: %s", listing_id, exc)
 
 
 class ActiveListingManager(models.Manager):
@@ -37,12 +42,12 @@ class Listing(models.Model):
     )
     title = models.CharField(max_length=255)
     description = models.TextField()
-    listing_type = models.CharField(max_length=10, choices=LISTING_TYPE_CHOICES)
-    price = models.DecimalField(max_digits=12, decimal_places=2)
+    listing_type = models.CharField(max_length=10, choices=LISTING_TYPE_CHOICES, db_index=True)
+    price = models.DecimalField(max_digits=12, decimal_places=2, db_index=True)
     area = models.FloatField()
-    rooms = models.IntegerField()
+    rooms = models.IntegerField(db_index=True)
     floor = models.IntegerField()
-    city = models.CharField(max_length=100)
+    city = models.CharField(max_length=100, db_index=True)
     address = models.CharField(max_length=255)
     latitude = models.DecimalField(
         max_digits=9, decimal_places=6, null=True, blank=True
@@ -57,24 +62,28 @@ class Listing(models.Model):
     objects = ActiveListingManager()
     all_objects = models.Manager()
 
+    class Meta:
+        indexes = [
+            models.Index(fields=['city', 'listing_type', 'price'], name='listing_filter_idx'),
+            models.Index(models.functions.Upper('city'), name='listing_city_upper_idx'),
+        ]
+
     def __str__(self) -> str:
         return self.title
 
     def save(self, *args, **kwargs):
-        needs_geocoding = self.latitude is None or self.longitude is None
-        if self.pk:
-            try:
-                old = Listing.all_objects.get(pk=self.pk)
-                if old.city != self.city or old.address != self.address:
-                    needs_geocoding = True
-            except Listing.DoesNotExist:
-                pass
-        if needs_geocoding and self.city and self.address:
-            lat, lng = geocode_address(self.city, self.address)
-            if lat is not None and lng is not None:
-                self.latitude = lat
-                self.longitude = lng
+        is_new = self.pk is None
+        # Приоритет ручного ввода: не запускаем, если координаты уже есть
+        needs_geocoding = not self.latitude or not self.longitude
+
         super().save(*args, **kwargs)
+
+        if is_new and needs_geocoding and self.city and self.address:
+            threading.Thread(
+                target=_geocode_listing,
+                args=(self.pk, self.city, self.address),
+                daemon=True
+            ).start()
 
 
 class ListingImage(models.Model):

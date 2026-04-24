@@ -47,7 +47,8 @@ export class HomeComponent implements OnInit {
     this.isLoading = true;
     this.errorMessage = '';
     this.listingsService.getAll().subscribe({
-      next: (data) => {
+      next: (response) => {
+        const data = response.results;
         this.listings = data.slice(0, 6);
         if (this.currentUser?.is_agent) {
           this.myListings = data.filter((l) => l.owner?.id === this.currentUser!.id);

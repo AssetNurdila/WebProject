@@ -1,4 +1,6 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Subject, debounceTime, switchMap, catchError, of } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ListingCardComponent } from '../../components/listing-card/listing-card.component';
@@ -18,6 +20,7 @@ export class CatalogComponent implements OnInit {
   private listingsService = inject(ListingsService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  private destroyRef = inject(DestroyRef);
 
   listings: Listing[] = [];
   isLoading = true;
@@ -30,6 +33,7 @@ export class CatalogComponent implements OnInit {
     min_price: null,
     max_price: null,
     rooms: null,
+    min_rooms: null,
   };
 
   sortBy = 'date';
@@ -38,12 +42,35 @@ export class CatalogComponent implements OnInit {
   mapListings: MapListing[] = [];
   mapBounds: MapBounds | null = null;
 
+  private filterChange$ = new Subject<void>();
+
   ngOnInit(): void {
-    this.route.queryParams.subscribe((params) => {
+    this.route.queryParams.pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe((params) => {
       if (params['city']) this.filters.city = params['city'];
       if (params['listing_type']) this.filters.listing_type = params['listing_type'];
       if (params['view'] === 'map') this.viewMode = 'map';
-      this.loadListings();
+      this.filterChange$.next();
+    });
+
+    this.filterChange$.pipe(
+      debounceTime(400),
+      switchMap(() => {
+        this.isLoading = true;
+        this.errorMessage = '';
+        const cleanFilters = this.cleanFilters();
+        return this.listingsService.getAll(cleanFilters).pipe(
+          catchError(() => {
+            this.errorMessage = 'Ошибка загрузки объявлений';
+            return of({ count: 0, next: null, previous: null, results: [] });
+          })
+        );
+      }),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe((response) => {
+      this.listings = this.sortListings(response.results);
+      this.isLoading = false;
     });
   }
 
@@ -53,7 +80,7 @@ export class CatalogComponent implements OnInit {
   }
 
   onFilterChange(): void {
-    this.loadListings();
+    this.filterChange$.next();
     if (this.viewMode === 'map') this.loadMapListings();
   }
 
@@ -77,30 +104,12 @@ export class CatalogComponent implements OnInit {
     if (this.filters.min_price != null) f.min_price = this.filters.min_price;
     if (this.filters.max_price != null) f.max_price = this.filters.max_price;
     if (this.filters.rooms != null) f.rooms = this.filters.rooms;
+    if (this.filters.min_rooms != null) f.min_rooms = this.filters.min_rooms;
     return f;
   }
 
   loadListings(): void {
-    this.isLoading = true;
-    this.errorMessage = '';
-
-    const cleanFilters: ListingFilters = {};
-    if (this.filters.city) cleanFilters.city = this.filters.city;
-    if (this.filters.listing_type) cleanFilters.listing_type = this.filters.listing_type;
-    if (this.filters.min_price != null) cleanFilters.min_price = this.filters.min_price;
-    if (this.filters.max_price != null) cleanFilters.max_price = this.filters.max_price;
-    if (this.filters.rooms != null) cleanFilters.rooms = this.filters.rooms;
-
-    this.listingsService.getAll(cleanFilters).subscribe({
-      next: (data) => {
-        this.listings = this.sortListings(data);
-        this.isLoading = false;
-      },
-      error: () => {
-        this.errorMessage = 'Ошибка загрузки объявлений';
-        this.isLoading = false;
-      },
-    });
+    this.filterChange$.next();
   }
 
   sortListings(data: Listing[]): Listing[] {
@@ -112,14 +121,14 @@ export class CatalogComponent implements OnInit {
   }
 
   applyFilters(): void {
-    this.loadListings();
+    this.filterChange$.next();
     if (this.viewMode === 'map') this.loadMapListings();
   }
 
   resetFilters(): void {
-    this.filters = { city: '', listing_type: '', min_price: null, max_price: null, rooms: null };
+    this.filters = { city: '', listing_type: '', min_price: null, max_price: null, rooms: null, min_rooms: null };
     this.sortBy = 'date';
-    this.loadListings();
+    this.filterChange$.next();
     if (this.viewMode === 'map') this.loadMapListings();
   }
 

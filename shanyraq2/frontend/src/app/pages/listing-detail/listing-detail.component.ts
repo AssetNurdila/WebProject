@@ -72,7 +72,8 @@ export class ListingDetailComponent implements OnInit {
 
   loadSimilar(city: string, excludeId: number): void {
     this.listingsService.getAll({ city }).subscribe({
-      next: (data) => {
+      next: (response) => {
+        const data = response.results;
         this.similarListings = data.filter((l) => l.id !== excludeId).slice(0, 3);
       },
       error: () => {},

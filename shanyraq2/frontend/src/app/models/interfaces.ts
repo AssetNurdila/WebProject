@@ -60,4 +60,12 @@ export interface ListingFilters {
   min_price?: number | null;
   max_price?: number | null;
   rooms?: number | null;
+  min_rooms?: number | null;
+}
+
+export interface PaginatedResponse<T> {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: T[];
 }

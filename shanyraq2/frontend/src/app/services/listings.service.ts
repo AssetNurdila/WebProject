@@ -1,20 +1,25 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Listing, ListingFilters, MapBounds, MapListing } from '../models/interfaces';
+import { Listing, ListingFilters, MapBounds, MapListing, PaginatedResponse } from '../models/interfaces';
 
 @Injectable({ providedIn: 'root' })
 export class ListingsService {
   private http = inject(HttpClient);
 
-  getAll(filters: ListingFilters = {}): Observable<Listing[]> {
-    let params = new HttpParams();
+  getAll(filters: ListingFilters = {}, page = 1): Observable<PaginatedResponse<Listing>> {
+    let params = new HttpParams().set('page', String(page));
     if (filters.city) params = params.set('city', filters.city);
     if (filters.listing_type) params = params.set('listing_type', filters.listing_type);
     if (filters.min_price != null) params = params.set('min_price', String(filters.min_price));
     if (filters.max_price != null) params = params.set('max_price', String(filters.max_price));
     if (filters.rooms != null) params = params.set('rooms', String(filters.rooms));
-    return this.http.get<Listing[]>('/api/listings/', { params });
+    if (filters.min_rooms != null) params = params.set('min_rooms', String(filters.min_rooms));
+    return this.http.get<PaginatedResponse<Listing>>('/api/listings/', { params });
+  }
+
+  getMyListings(): Observable<Listing[]> {
+    return this.http.get<Listing[]>('/api/listings/my/');
   }
 
   getById(id: number): Observable<Listing> {

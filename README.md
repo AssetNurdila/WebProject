@@ -1,1 +1,2 @@
 Shanyraq is a modern real estate marketplace where users can easily buy and sell houses, land, and buildings. Built by Dulat Amangeldiyev, Asset Nurdilla, and Murat Madiyar, it offers a simple, fast, and transparent way to connect buyers and sellers in one convenient platform.
+Для работы геокодирования убедитесь, что в .env прописан GEMINI_API_KEY и установлены все зависимости из requirements.txt

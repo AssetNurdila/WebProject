@@ -1,5 +1,7 @@
+import threading
 from django.shortcuts import get_object_or_404
 from rest_framework import status
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -11,6 +13,10 @@ from apps.listings.serializers import (
     MapListingSerializer,
 )
 
+class ListingPagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = 'page_size'
+    max_page_size = 100
 
 class ListingListCreateView(APIView):
     def get_permissions(self):
@@ -32,6 +38,7 @@ class ListingListCreateView(APIView):
         min_price = filters.get("min_price")
         max_price = filters.get("max_price")
         rooms = filters.get("rooms")
+        min_rooms = filters.get("min_rooms")
 
         if city:
             queryset = queryset.filter(city__iexact=city)
@@ -41,11 +48,20 @@ class ListingListCreateView(APIView):
             queryset = queryset.filter(price__gte=min_price)
         if max_price is not None:
             queryset = queryset.filter(price__lte=max_price)
-        if rooms is not None:
+        if min_rooms is not None:
+            queryset = queryset.filter(rooms__gte=min_rooms)
+        elif rooms is not None:
             queryset = queryset.filter(rooms=rooms)
 
-        serializer = ListingSerializer(queryset, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        ordering = request.query_params.get("ordering", "-created_at")
+        allowed_ordering = ["price", "-price", "-created_at", "created_at"]
+        if ordering in allowed_ordering:
+            queryset = queryset.order_by(ordering)
+
+        paginator = ListingPagination()
+        page = paginator.paginate_queryset(queryset, request)
+        serializer = ListingSerializer(page, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
     def post(self, request):
         serializer = ListingSerializer(data=request.data)
@@ -175,3 +191,17 @@ class ListingMapView(APIView):
             queryset[:500], many=True, context={"request": request}
         )
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class MyListingsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        queryset = (
+            Listing.all_objects
+            .filter(owner=request.user)
+            .prefetch_related('images')
+            .order_by('-created_at')
+        )
+        serializer = ListingSerializer(queryset, many=True)
+        return Response(serializer.data)
