@@ -1,2 +1,28 @@
-Shanyraq is a modern real estate marketplace where users can easily buy and sell houses, land, and buildings. Built by Dulat Amangeldiyev, Asset Nurdilla, and Murat Madiyar, it offers a simple, fast, and transparent way to connect buyers and sellers in one convenient platform.
+<img width="3840" height="2400" alt="image" src="https://github.com/user-attachments/assets/187b4bbc-f4bb-4301-a4b6-df4a1e945027" />Shanyraq is a modern real estate marketplace where users can easily buy and sell houses, land, and buildings. Built by Dulat Amangeldiyev, Asset Nurdilla, and Murat Madiyar, it offers a simple, fast, and transparent way to connect buyers and sellers in one convenient platform.
 Для работы геокодирования убедитесь, что в .env прописан GEMINI_API_KEY и установлены все зависимости из requirements.txt
+
+feat: масштабный рефакторинг, оптимизация и секьюрность проекта
+
+1. База данных и Производительность:
+- Добавлены индексы (db_index, составные и функциональные Upper индексы) для полей поиска недвижимости.
+- Устранена критическая проблема N+1 запроса при загрузке картинок для карты (использован prefetch_related вместо filter).
+
+2. Пагинация и API:
+- Внедрена PageNumberPagination в эндпоинтах каталога. Фронтенд (Angular) адаптирован под новую структуру (PaginatedResponse, извлечение из .results).
+- owner в объявлениях теперь возвращается как вложенный объект с username/phone, а не просто ID.
+
+3. Безопасное Геокодирование:
+- Запрос к API Nominatim (geopy) вынесен в фоновый поток (threading) внутри метода save(), чтобы не блокировать создание объявления.
+- Добавлена защита от перезаписи ручных координат (race conditions решаются через .update). В поисковой запрос добавлен префикс "Казахстан, ".
+
+4. Безопасность и Деплой:
+- Хардкод ключей убран. Секреты (SECRET_KEY, GEMINI_API_KEY) перенесены в переменные окружения (.env) через python-decouple.
+- Настроена поддержка PostgreSQL (dj-database-url, psycopg2-binary). Зависимости обновлены для совместимости с Python 3.14.
+
+5. Функционал:
+- Создано новое приложение `bookings` (заявки) с моделями и эндпоинтами.
+- Добавлена поддержка фильтра "4+" комнат (через параметр min_rooms).
+
+6. Фронтенд:
+- Внедрен RxJS debounceTime(400) и switchMap для оптимизации количества поисковых запросов при вводе в фильтры.
+- Устранены утечки памяти во всех компонентах с помощью takeUntilDestroyed().
