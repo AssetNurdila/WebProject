@@ -2,6 +2,8 @@ from django.conf import settings
 from django.db import models
 from apps.listings.models import Listing
 
+from django.db.models import Q
+
 class Booking(models.Model):
     STATUS_CHOICES = [
         ('pending', 'Ожидает'),
@@ -29,6 +31,13 @@ class Booking(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['listing', 'user'],
+                condition=Q(status='pending'),
+                name='unique_pending_booking'
+            )
+        ]
 
     def __str__(self):
         return f"{self.user.username} -> {self.listing.title} [{self.status}]"

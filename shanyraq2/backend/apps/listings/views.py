@@ -41,7 +41,7 @@ class ListingListCreateView(APIView):
         min_rooms = filters.get("min_rooms")
 
         if city:
-            queryset = queryset.filter(city__iexact=city)
+            queryset = queryset.filter(city__iexact=city.strip())
         if listing_type:
             queryset = queryset.filter(listing_type=listing_type)
         if min_price is not None:
@@ -148,8 +148,8 @@ class ListingMapView(APIView):
     def get(self, request):
         queryset = (
             Listing.objects.filter(latitude__isnull=False, longitude__isnull=False)
-            .select_related("owner")
             .prefetch_related("images")
+            .only('id', 'title', 'price', 'listing_type', 'rooms', 'area', 'city', 'address', 'latitude', 'longitude')
         )
 
         params = request.query_params

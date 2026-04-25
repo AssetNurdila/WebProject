@@ -1,4 +1,4 @@
-import { Component, Input, inject } from '@angular/core';
+import { Component, Input, inject, OnInit, OnChanges, SimpleChanges, ChangeDetectorRef } from '@angular/core';
 import { Router } from '@angular/router';
 import { Listing } from '../../models/interfaces';
 import { FavoritesService } from '../../services/favorites.service';
@@ -12,15 +12,28 @@ import { AuthModalService } from '../../services/auth-modal.service';
   templateUrl: './listing-card.component.html',
   styleUrl: './listing-card.component.css',
 })
-export class ListingCardComponent {
+export class ListingCardComponent implements OnInit, OnChanges {
   @Input() listing!: Listing;
 
   private router = inject(Router);
   private favoritesService = inject(FavoritesService);
   private authService = inject(AuthService);
   private authModal = inject(AuthModalService);
+  private cdr = inject(ChangeDetectorRef);
 
   isFavorited = false;
+
+  ngOnInit(): void {
+    if (this.listing) {
+      this.isFavorited = !!this.listing.is_favorited;
+    }
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['listing'] && this.listing) {
+      this.isFavorited = !!this.listing.is_favorited;
+    }
+  }
 
   get mainImage(): string | null {
     const main = this.listing.images?.find((img) => img.is_main);
@@ -42,6 +55,7 @@ export class ListingCardComponent {
   }
 
   toggleFavorite(event: Event): void {
+    event.preventDefault();
     event.stopPropagation();
     if (!this.authService.isLoggedIn()) {
       this.authModal.open();
@@ -49,12 +63,20 @@ export class ListingCardComponent {
     }
     if (this.isFavorited) {
       this.favoritesService.remove(this.listing.id).subscribe({
-        next: () => (this.isFavorited = false),
+        next: () => {
+          this.isFavorited = false;
+          if (this.listing) this.listing.is_favorited = false;
+          this.cdr.detectChanges();
+        },
         error: () => {},
       });
     } else {
       this.favoritesService.add(this.listing.id).subscribe({
-        next: () => (this.isFavorited = true),
+        next: () => {
+          this.isFavorited = true;
+          if (this.listing) this.listing.is_favorited = true;
+          this.cdr.detectChanges();
+        },
         error: () => {},
       });
     }

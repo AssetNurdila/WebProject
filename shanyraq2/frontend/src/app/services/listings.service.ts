@@ -15,6 +15,7 @@ export class ListingsService {
     if (filters.max_price != null) params = params.set('max_price', String(filters.max_price));
     if (filters.rooms != null) params = params.set('rooms', String(filters.rooms));
     if (filters.min_rooms != null) params = params.set('min_rooms', String(filters.min_rooms));
+    if (filters.ordering) params = params.set('ordering', filters.ordering);
     return this.http.get<PaginatedResponse<Listing>>('/api/listings/', { params });
   }
 

@@ -63,6 +63,7 @@ export interface ListingFilters {
   max_price?: number | null;
   rooms?: number | null;
   min_rooms?: number | null;
+  ordering?: string;
 }
 
 export interface PaginatedResponse<T> {

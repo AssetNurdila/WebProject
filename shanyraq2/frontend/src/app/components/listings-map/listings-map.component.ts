@@ -57,6 +57,9 @@ export class ListingsMapComponent implements AfterViewInit, OnChanges, OnDestroy
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['listings'] && this.map) {
       this.renderMarkers();
+      setTimeout(() => {
+        if (this.map) this.map.invalidateSize();
+      }, 0);
     }
   }
 

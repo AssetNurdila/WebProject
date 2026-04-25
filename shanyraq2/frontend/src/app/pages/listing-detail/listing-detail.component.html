@@ -99,7 +99,7 @@
             <button
               class="btn-favorite"
               [class.favorited]="isFavorited"
-              (click)="toggleFavorite()"
+              (click)="toggleFavorite($event)"
             >
               {{ isFavorited ? '♥ В избранном' : '♡ В избранное' }}
             </button>

@@ -24,7 +24,11 @@ class MyBookingsView(APIView):
     def get(self, request):
         bookings = Booking.objects.filter(
             user=request.user
-        ).select_related('listing')
+        ).select_related('listing', 'user').only(
+            'id', 'message', 'phone', 'status', 'created_at',
+            'listing__id', 'listing__title',
+            'user__id', 'user__username'
+        )
         return Response(BookingSerializer(bookings, many=True).data)
 
 class IncomingBookingsView(APIView):
@@ -34,11 +38,18 @@ class IncomingBookingsView(APIView):
     def get(self, request):
         bookings = Booking.objects.filter(
             listing__owner=request.user
-        ).select_related('listing', 'user')
+        ).select_related('listing', 'user').only(
+            'id', 'message', 'phone', 'status', 'created_at',
+            'listing__id', 'listing__title',
+            'user__id', 'user__username'
+        )
         return Response(BookingSerializer(bookings, many=True).data)
 
+class BookingStatusUpdateView(APIView):
+    """Агент меняет статус заявки."""
+    permission_classes = [IsAuthenticated]
+
     def patch(self, request, pk):
-        """Агент меняет статус заявки."""
         booking = Booking.objects.filter(
             pk=pk, listing__owner=request.user
         ).first()

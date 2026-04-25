@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, DestroyRef } from '@angular/core';
+import { Component, inject, OnInit, DestroyRef, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { switchMap, EMPTY, catchError, of } from 'rxjs';
@@ -22,6 +22,7 @@ export class ListingDetailComponent implements OnInit {
   private listingsService = inject(ListingsService);
   private favoritesService = inject(FavoritesService);
   private authService = inject(AuthService);
+  private cdr = inject(ChangeDetectorRef);
 
   listing: Listing | null = null;
   similarListings: Listing[] = [];
@@ -92,7 +93,9 @@ export class ListingDetailComponent implements OnInit {
     this.activeImage = image;
   }
 
-  toggleFavorite(): void {
+  toggleFavorite(event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
     if (!this.isLoggedIn) {
       this.router.navigate(['/auth']);
       return;
@@ -102,7 +105,9 @@ export class ListingDetailComponent implements OnInit {
       this.favoritesService.remove(this.listing.id).subscribe({
         next: () => {
           this.isFavorited = false;
+          if (this.listing) this.listing.is_favorited = false;
           this.showToast('Удалено из избранного');
+          this.cdr.detectChanges();
         },
         error: () => this.showToast('Ошибка'),
       });
@@ -110,7 +115,9 @@ export class ListingDetailComponent implements OnInit {
       this.favoritesService.add(this.listing.id).subscribe({
         next: () => {
           this.isFavorited = true;
+          if (this.listing) this.listing.is_favorited = true;
           this.showToast('Добавлено в избранное');
+          this.cdr.detectChanges();
         },
         error: () => this.showToast('Ошибка'),
       });

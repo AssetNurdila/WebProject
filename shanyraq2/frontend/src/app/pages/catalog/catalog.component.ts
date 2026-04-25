@@ -1,6 +1,6 @@
-import { Component, inject, OnInit, DestroyRef } from '@angular/core';
+import { Component, inject, OnInit, DestroyRef, ChangeDetectorRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Subject, debounceTime, switchMap, catchError, of } from 'rxjs';
+import { Subject, debounceTime, switchMap, catchError, of, startWith } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ListingCardComponent } from '../../components/listing-card/listing-card.component';
@@ -21,6 +21,7 @@ export class CatalogComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private destroyRef = inject(DestroyRef);
+  private cdr = inject(ChangeDetectorRef);
 
   listings: Listing[] = [];
   isLoading = true;
@@ -43,6 +44,7 @@ export class CatalogComponent implements OnInit {
   mapBounds: MapBounds | null = null;
 
   private filterChange$ = new Subject<void>();
+  private mapFilterChange$ = new Subject<void>();
 
   ngOnInit(): void {
     this.route.queryParams.pipe(
@@ -55,6 +57,7 @@ export class CatalogComponent implements OnInit {
     });
 
     this.filterChange$.pipe(
+      startWith(undefined),
       debounceTime(400),
       switchMap(() => {
         this.isLoading = true;
@@ -69,8 +72,24 @@ export class CatalogComponent implements OnInit {
       }),
       takeUntilDestroyed(this.destroyRef)
     ).subscribe((response) => {
-      this.listings = this.sortListings(response.results);
+      this.listings = response.results;
       this.isLoading = false;
+      this.cdr.detectChanges();
+    });
+
+    this.mapFilterChange$.pipe(
+      startWith(undefined),
+      debounceTime(400),
+      switchMap(() => {
+        const cleanFilters = this.cleanFilters();
+        return this.listingsService.getMapListings(cleanFilters, this.mapBounds ?? undefined).pipe(
+          catchError(() => of([]))
+        );
+      }),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe((data) => {
+      this.mapListings = data;
+      this.cdr.detectChanges();
     });
   }
 
@@ -81,20 +100,16 @@ export class CatalogComponent implements OnInit {
 
   onFilterChange(): void {
     this.filterChange$.next();
-    if (this.viewMode === 'map') this.loadMapListings();
+    if (this.viewMode === 'map') this.mapFilterChange$.next();
   }
 
   onMapBoundsChanged(bounds: MapBounds): void {
     this.mapBounds = bounds;
-    this.loadMapListings();
+    this.mapFilterChange$.next();
   }
 
   private loadMapListings(): void {
-    const cleanFilters = this.cleanFilters();
-    this.listingsService.getMapListings(cleanFilters, this.mapBounds ?? undefined).subscribe({
-      next: (data) => (this.mapListings = data),
-      error: () => (this.mapListings = []),
-    });
+    this.mapFilterChange$.next();
   }
 
   private cleanFilters(): ListingFilters {
@@ -105,6 +120,11 @@ export class CatalogComponent implements OnInit {
     if (this.filters.max_price != null) f.max_price = this.filters.max_price;
     if (this.filters.rooms != null) f.rooms = this.filters.rooms;
     if (this.filters.min_rooms != null) f.min_rooms = this.filters.min_rooms;
+    
+    if (this.sortBy === 'price_asc') f.ordering = 'price';
+    else if (this.sortBy === 'price_desc') f.ordering = '-price';
+    else f.ordering = '-created_at';
+    
     return f;
   }
 
@@ -112,27 +132,19 @@ export class CatalogComponent implements OnInit {
     this.filterChange$.next();
   }
 
-  sortListings(data: Listing[]): Listing[] {
-    if (this.sortBy === 'price_asc') return [...data].sort((a, b) => a.price - b.price);
-    if (this.sortBy === 'price_desc') return [...data].sort((a, b) => b.price - a.price);
-    return [...data].sort(
-      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    );
-  }
-
   applyFilters(): void {
     this.filterChange$.next();
-    if (this.viewMode === 'map') this.loadMapListings();
+    if (this.viewMode === 'map') this.mapFilterChange$.next();
   }
 
   resetFilters(): void {
     this.filters = { city: '', listing_type: '', min_price: null, max_price: null, rooms: null, min_rooms: null };
     this.sortBy = 'date';
     this.filterChange$.next();
-    if (this.viewMode === 'map') this.loadMapListings();
+    if (this.viewMode === 'map') this.mapFilterChange$.next();
   }
 
   onSortChange(): void {
-    this.listings = this.sortListings(this.listings);
+    this.filterChange$.next();
   }
 }
