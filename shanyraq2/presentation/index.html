@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Шанырак — Презентация проекта</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0a0a;--surface:#111;--border:rgba(201,168,76,.2);--gold:#c9a84c;--gold-light:#d4b869;--text:#e8e4dc;--text-secondary:#8a8578;--font-serif:'Playfair Display',Georgia,serif;--font-sans:'Montserrat',sans-serif}
+html{scroll-behavior:smooth;scroll-snap-type:y mandatory}
+body{background:var(--bg);color:var(--text);font-family:var(--font-sans);overflow-x:hidden}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:20px 48px;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(180deg,rgba(10,10,10,.95) 0%,transparent 100%);backdrop-filter:blur(12px)}
+.nav-logo{font-family:var(--font-sans);font-size:18px;font-weight:600;letter-spacing:.25em;color:var(--text)}
+.nav-logo span{display:block;font-size:8px;letter-spacing:.3em;color:var(--gold);text-transform:uppercase;margin-top:2px}
+.nav-dots{display:flex;gap:8px}
+.nav-dot{width:10px;height:10px;border-radius:50%;border:1px solid var(--border);background:transparent;cursor:pointer;transition:.3s}
+.nav-dot.active,.nav-dot:hover{background:var(--gold);border-color:var(--gold)}
+
+/* SLIDE */
+.slide{min-height:100vh;scroll-snap-align:start;display:flex;align-items:center;justify-content:center;position:relative;padding:100px 80px}
+.slide-inner{max-width:1200px;width:100%;animation:fadeUp .8s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+
+/* HERO */
+.hero{text-align:center;flex-direction:column}
+.hero-badge{display:inline-block;padding:8px 24px;border:1px solid var(--border);font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold);margin-bottom:40px}
+.hero h1{font-family:var(--font-serif);font-size:clamp(48px,8vw,96px);font-weight:400;letter-spacing:.04em;line-height:1.1;margin-bottom:24px}
+.hero h1 em{font-style:italic;color:var(--gold)}
+.hero-sub{font-size:16px;color:var(--text-secondary);letter-spacing:.12em;text-transform:uppercase;font-weight:300}
+.hero-line{width:60px;height:1px;background:var(--gold);margin:48px auto 0;opacity:.5}
+.hero-scroll{position:absolute;bottom:40px;left:50%;transform:translateX(-50%);font-size:10px;letter-spacing:.2em;color:var(--text-secondary);text-transform:uppercase;animation:bounce 2s infinite}
+@keyframes bounce{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(8px)}}
+
+/* CORNER DECORATIONS */
+.corner-tl,.corner-br{position:absolute;width:80px;height:80px;border-color:var(--border);border-style:solid;pointer-events:none}
+.corner-tl{top:60px;left:60px;border-width:1px 0 0 1px}
+.corner-br{bottom:60px;right:60px;border-width:0 1px 1px 0}
+
+/* SECTION HEADER */
+.section-num{font-size:11px;letter-spacing:.3em;color:var(--gold);text-transform:uppercase;margin-bottom:12px}
+.section-title{font-family:var(--font-serif);font-size:clamp(32px,5vw,56px);font-weight:400;margin-bottom:20px;line-height:1.2}
+.section-desc{font-size:14px;color:var(--text-secondary);line-height:1.8;max-width:600px;margin-bottom:48px}
+
+/* GRID */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+
+/* SCREENSHOT */
+.screenshot{border:1px solid var(--border);border-radius:4px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.5);transition:.4s}
+.screenshot:hover{transform:translateY(-4px);box-shadow:0 30px 80px rgba(0,0,0,.7)}
+.screenshot img{width:100%;display:block}
+
+/* FEATURE CARD */
+.feature-card{padding:32px;border:1px solid var(--border);background:rgba(255,255,255,.02);transition:.3s}
+.feature-card:hover{border-color:var(--gold);background:rgba(201,168,76,.04)}
+.feature-icon{font-size:28px;margin-bottom:16px}
+.feature-title{font-size:14px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px;color:var(--text)}
+.feature-text{font-size:13px;color:var(--text-secondary);line-height:1.7}
+
+/* TECH CARD */
+.tech-card{padding:24px 20px;border:1px solid var(--border);text-align:center;background:rgba(255,255,255,.02);transition:.3s}
+.tech-card:hover{border-color:var(--gold);transform:translateY(-2px)}
+.tech-label{font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--gold);margin-bottom:8px}
+.tech-name{font-size:15px;font-weight:500;margin-bottom:4px}
+.tech-ver{font-size:11px;color:var(--text-secondary)}
+
+/* ARCH */
+.arch-row{display:flex;align-items:center;gap:16px;margin-bottom:16px}
+.arch-box{padding:14px 20px;border:1px solid var(--border);font-size:12px;font-weight:500;letter-spacing:.06em;background:rgba(201,168,76,.04);flex:1;text-align:center}
+.arch-box.gold{border-color:var(--gold);color:var(--gold)}
+.arch-arrow{color:var(--gold);font-size:18px;flex-shrink:0}
+
+/* STAT */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:32px;margin-top:48px}
+.stat-item{text-align:center}
+.stat-num{font-family:var(--font-serif);font-size:48px;color:var(--gold);margin-bottom:8px}
+.stat-label{font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--text-secondary)}
+
+/* TEAM */
+.team-card{padding:32px;border:1px solid var(--border);text-align:center;background:rgba(255,255,255,.02)}
+.team-avatar{width:64px;height:64px;border-radius:50%;border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:24px;color:var(--gold);background:rgba(201,168,76,.08)}
+.team-name{font-size:14px;font-weight:600;margin-bottom:4px}
+.team-role{font-size:11px;color:var(--gold);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px}
+.team-desc{font-size:12px;color:var(--text-secondary);line-height:1.6}
+
+/* LIST */
+.check-list{list-style:none;display:flex;flex-direction:column;gap:14px}
+.check-list li{font-size:14px;color:var(--text-secondary);padding-left:28px;position:relative;line-height:1.6}
+.check-list li::before{content:"✦";position:absolute;left:0;color:var(--gold);font-size:12px}
+
+/* DIVIDER */
+.divider{width:100%;height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent);margin:32px 0}
+
+/* FOOTER */
+.slide-footer{text-align:center;padding:60px 80px;border-top:1px solid var(--border)}
+.slide-footer p{font-size:12px;color:var(--text-secondary);letter-spacing:.08em}
+
+@media(max-width:768px){
+  .slide{padding:80px 24px}
+  .grid-2,.grid-3,.grid-4,.stat-grid{grid-template-columns:1fr}
+  nav{padding:16px 20px}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">ШАНЫРАК<span>Элитная недвижимость</span></div>
+  <div class="nav-dots">
+    <div class="nav-dot active" onclick="goSlide(0)"></div>
+    <div class="nav-dot" onclick="goSlide(1)"></div>
+    <div class="nav-dot" onclick="goSlide(2)"></div>
+    <div class="nav-dot" onclick="goSlide(3)"></div>
+    <div class="nav-dot" onclick="goSlide(4)"></div>
+    <div class="nav-dot" onclick="goSlide(5)"></div>
+    <div class="nav-dot" onclick="goSlide(6)"></div>
+    <div class="nav-dot" onclick="goSlide(7)"></div>
+  </div>
+</nav>
+
+<!-- SLIDE 1: HERO -->
+<section class="slide hero" id="s0">
+  <div class="corner-tl"></div>
+  <div class="corner-br"></div>
+  <div class="slide-inner" style="text-align:center">
+    <div class="hero-badge">Проект для вебки · 2026</div>
+    <h1>Ш А Н Ы Р А К</h1>
+    <div class="hero-sub">Платформа элитной недвижимости Казахстана</div>
+    <div class="hero-line"></div>
+  </div>
+  <div class="hero-scroll">↓ Листайте вниз</div>
+</section>
+
+<!-- SLIDE 2: О ПРОЕКТЕ -->
+<section class="slide" id="s1">
+  <div class="slide-inner">
+    <div class="grid-2">
+      <div>
+        <div class="section-num">01 · О проекте</div>
+        <div class="section-title">Что такое<br>Шанырак?</div>
+        <div class="section-desc">Закрытая платформа для поиска, аренды и приобретения объектов элитной недвижимости в Казахстане. Объединяет агентов и покупателей в едином пространстве с премиальным UX.</div>
+        <ul class="check-list">
+          <li>Поиск недвижимости с фильтрами и интерактивной картой</li>
+          <li>Личный кабинет агента: управление объявлениями</li>
+          <li>Система бронирований и заявок</li>
+          <li>AI-консьерж на базе Gemini 2.0</li>
+          <li>Виртуальные 3D-туры и видео-обзоры</li>
+          <li>Избранное с синхронизацией состояния</li>
+        </ul>
+      </div>
+      <div class="screenshot">
+        <img src="screen_home.png" alt="Главная страница Шанырак">
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 3: ФУНКЦИОНАЛ -->
+<section class="slide" id="s2">
+  <div class="slide-inner">
+    <div class="section-num">02 · Функционал</div>
+    <div class="section-title">Ключевые возможности</div>
+    <div class="section-desc">Полный цикл работы с недвижимостью — от поиска до бронирования.</div>
+    <div class="grid-3">
+      <div class="feature-card">
+        <div class="feature-icon">🏠</div>
+        <div class="feature-title">Каталог объектов</div>
+        <div class="feature-text">Пагинация, фильтры по городу, типу сделки, цене и комнатам. Сортировка по дате и цене. Переключение список/карта.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🗺️</div>
+        <div class="feature-title">Интерактивная карта</div>
+        <div class="feature-text">Leaflet/OpenStreetMap с кластеризацией маркеров. Автоматический геокодинг через Nominatim. Bounds-фильтрация.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🤖</div>
+        <div class="feature-title">AI-Консьерж</div>
+        <div class="feature-text">Gemini 2.0 Flash API. Составление описаний, консультации, эскалация обращений к администрации. Сохранение истории.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📋</div>
+        <div class="feature-title">Система заявок</div>
+        <div class="feature-text">Бронирование объектов с трёхступенчатым статусом: ожидание → принято/отклонено. Уведомления агенту.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🎥</div>
+        <div class="feature-title">360° и видео</div>
+        <div class="feature-text">Виртуальные туры через Matterport/Kuula. Видео-обзоры YouTube. Безопасный iframe с whitelist доменов.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">👤</div>
+        <div class="feature-title">Личный кабинет</div>
+        <div class="feature-text">CRUD объявлений, загрузка до 10 фото, управление профилем, аватар, избранное, входящие заявки.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 4: СКРИНШОТЫ -->
+<section class="slide" id="s3">
+  <div class="slide-inner">
+    <div class="section-num">03 · Интерфейс</div>
+    <div class="section-title">Скриншоты платформы</div>
+    <div class="section-desc">Премиальный дизайн в тёмных тонах с золотыми акцентами.</div>
+    <div class="grid-2" style="gap:24px">
+      <div class="screenshot"><img src="screen_catalog.png" alt="Каталог"></div>
+      <div class="screenshot"><img src="screen_chat.png" alt="AI Чат"></div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 5: АРХИТЕКТУРА -->
+<section class="slide" id="s4">
+  <div class="slide-inner">
+    <div class="section-num">04 · Архитектура</div>
+    <div class="section-title">Технический стек</div>
+    <div class="section-desc">SPA + REST API с JWT аутентификацией и оптимизированными запросами к БД.</div>
+
+    <div class="grid-2">
+      <div>
+        <div style="margin-bottom:32px">
+          <div class="arch-row">
+            <div class="arch-box gold">Angular 17 SPA</div>
+            <div class="arch-arrow">→</div>
+            <div class="arch-box gold">Django REST API</div>
+            <div class="arch-arrow">→</div>
+            <div class="arch-box">SQLite / PostgreSQL</div>
+          </div>
+          <div class="arch-row">
+            <div class="arch-box">RxJS + HttpClient</div>
+            <div class="arch-arrow">←</div>
+            <div class="arch-box">JWT Auth</div>
+            <div class="arch-arrow">→</div>
+            <div class="arch-box">Gemini API</div>
+          </div>
+        </div>
+        <ul class="check-list">
+          <li>select_related / prefetch_related — нет N+1 запросов</li>
+          <li>Составные индексы для ускорения фильтрации</li>
+          <li>Background geocoding в отдельном потоке</li>
+          <li>SSR-безопасный Angular (isPlatformBrowser)</li>
+          <li>Пагинация на бэкенде (PageNumberPagination)</li>
+        </ul>
+      </div>
+      <div>
+        <div class="grid-2" style="gap:16px">
+          <div class="tech-card"><div class="tech-label">Frontend</div><div class="tech-name">Angular</div><div class="tech-ver">v17 · Standalone</div></div>
+          <div class="tech-card"><div class="tech-label">Backend</div><div class="tech-name">Django</div><div class="tech-ver">DRF · REST API</div></div>
+          <div class="tech-card"><div class="tech-label">Auth</div><div class="tech-name">JWT</div><div class="tech-ver">SimpleJWT</div></div>
+          <div class="tech-card"><div class="tech-label">AI</div><div class="tech-name">Gemini</div><div class="tech-ver">2.0 Flash</div></div>
+          <div class="tech-card"><div class="tech-label">Maps</div><div class="tech-name">Leaflet</div><div class="tech-ver">OpenStreetMap</div></div>
+          <div class="tech-card"><div class="tech-label">Geocoding</div><div class="tech-name">Nominatim</div><div class="tech-ver">geopy</div></div>
+          <div class="tech-card"><div class="tech-label">Styling</div><div class="tech-name">CSS</div><div class="tech-ver">Vanilla · BEM</div></div>
+          <div class="tech-card"><div class="tech-label">VCS</div><div class="tech-name">Git</div><div class="tech-ver">GitHub</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 6: МЕТРИКИ -->
+<section class="slide" id="s5">
+  <div class="slide-inner" style="text-align:center">
+    <div class="section-num" style="text-align:center">05 · Проект в цифрах</div>
+    <div class="section-title" style="text-align:center;margin:0 auto 16px">Масштаб проекта</div>
+    <div class="stat-grid">
+      <div class="stat-item"><div class="stat-num">5</div><div class="stat-label">Django Apps</div></div>
+      <div class="stat-item"><div class="stat-num">12+</div><div class="stat-label">REST Endpoints</div></div>
+      <div class="stat-item"><div class="stat-num">15+</div><div class="stat-label">Angular компонентов</div></div>
+      <div class="stat-item"><div class="stat-num">67</div><div class="stat-label">Количество комитов</div></div>
+    </div>
+    <div class="divider"></div>
+    <div class="grid-3" style="margin-top:32px;text-align:left">
+      <div class="feature-card">
+        <div class="feature-title">Backend Apps</div>
+        <div class="feature-text">users · listings · bookings · chat · config</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-title">Модели данных</div>
+        <div class="feature-text">CustomUser · Listing · ListingImage · Favorite · Booking · ChatSession · ChatMessage · AdminRequest</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-title">Frontend Pages</div>
+        <div class="feature-text">Home · Catalog · Listing Detail · Dashboard · Auth · Map View</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 7: КОМАНДА -->
+<section class="slide" id="s6">
+  <div class="slide-inner">
+    <div class="section-num" style="text-align:center">06 · Команда</div>
+    <div class="section-title" style="text-align:center;margin:0 auto 48px">Разработчики</div>
+    <div class="grid-3" style="max-width:960px;margin:0 auto">
+      <div class="team-card">
+        <div class="team-avatar">A</div>
+        <div class="team-name">Asset Nurdila</div>
+        <div class="team-role">Fullstack Developer</div>
+        <div class="team-desc">Backend архитектура, оптимизация БД, AI-чатбот, интеграция карт, система бронирований</div>
+      </div>
+      <div class="team-card">
+        <div class="team-avatar">M</div>
+        <div class="team-name">makebrokek</div>
+        <div class="team-role">Fullstack Developer</div>
+        <div class="team-desc">Архитектура проекта, код-ревью, тестирование, деплой, координация команды</div>
+      </div>
+      <div class="team-card">
+        <div class="team-avatar">D</div>
+        <div class="team-name">Dulat</div>
+        <div class="team-role">Frontend Developer</div>
+        <div class="team-desc">Virtual Tour / 360°, загрузка фото, видео-обзоры, интерфейс dashboard</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 8: ФИНАЛ -->
+<section class="slide hero" id="s7">
+  <div class="corner-tl"></div>
+  <div class="corner-br"></div>
+  <div class="slide-inner" style="text-align:center">
+    <div class="hero-badge">Спасибо за внимание</div>
+    <h1>Ш А Н Ы Р А К</h1>
+    <div class="hero-sub" style="margin-bottom:40px">Элитная недвижимость Казахстана</div>
+    <div style="font-size:13px;color:var(--text-secondary);letter-spacing:.06em">
+      Django REST Framework · Angular 17 · Gemini AI · Leaflet · JWT
+    </div>
+    <div class="hero-line"></div>
+    <div style="margin-top:32px;font-size:12px;color:var(--text-secondary)">
+      <a href="https://github.com/AssetNurdila/WebProject" style="color:var(--gold);text-decoration:none;letter-spacing:.08em" target="_blank">GITHUB.COM/ASSETNURDILA/WEBPROJECT</a>
+    </div>
+  </div>
+</section>
+
+<script>
+const slides=document.querySelectorAll('.slide');
+const dots=document.querySelectorAll('.nav-dot');
+function goSlide(i){slides[i]?.scrollIntoView({behavior:'smooth'})}
+const obs=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting){const i=[...slides].indexOf(e.target);dots.forEach((d,j)=>d.classList.toggle('active',j===i));e.target.querySelector('.slide-inner')?.style.setProperty('animation','fadeUp .8s ease')}})},{threshold:.4});
+slides.forEach(s=>obs.observe(s));
+</script>
+</body>
+</html>

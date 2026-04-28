@@ -1,4 +1,7 @@
 import threading
+import logging
+
+logger = logging.getLogger(__name__)
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.pagination import PageNumberPagination
@@ -60,14 +63,28 @@ class ListingListCreateView(APIView):
 
         paginator = ListingPagination()
         page = paginator.paginate_queryset(queryset, request)
-        serializer = ListingSerializer(page, many=True)
+        serializer = ListingSerializer(page, many=True, context={'request': request})
         return paginator.get_paginated_response(serializer.data)
 
     def post(self, request):
-        serializer = ListingSerializer(data=request.data)
+        serializer = ListingSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
-        serializer.save(owner=request.user)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        listing = serializer.save(owner=request.user)
+
+        # Handle uploaded images from FormData
+        images = request.FILES.getlist('images')
+        from apps.listings.models import ListingImage
+        for i, image_file in enumerate(images):
+            ListingImage.objects.create(
+                listing=listing,
+                image=image_file,
+                is_main=(i == 0),
+            )
+
+        # Re-serialize with images included
+        listing.refresh_from_db()
+        output = ListingSerializer(listing, context={'request': request})
+        return Response(output.data, status=status.HTTP_201_CREATED)
 
 
 class ListingDetailView(APIView):
@@ -88,7 +105,7 @@ class ListingDetailView(APIView):
             return Response(
                 {"detail": "Listing not found."}, status=status.HTTP_404_NOT_FOUND
             )
-        serializer = ListingSerializer(listing)
+        serializer = ListingSerializer(listing, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def put(self, request, pk):
@@ -99,7 +116,7 @@ class ListingDetailView(APIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        serializer = ListingSerializer(listing, data=request.data, partial=True)
+        serializer = ListingSerializer(listing, data=request.data, partial=True, context={'request': request})
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -201,10 +218,11 @@ class MyListingsView(APIView):
         queryset = (
             Listing.all_objects
             .filter(owner=request.user)
+            .select_related('owner')
             .prefetch_related('images')
             .order_by('-created_at')
         )
-        serializer = ListingSerializer(queryset, many=True)
+        serializer = ListingSerializer(queryset, many=True, context={'request': request})
         return Response(serializer.data)
 
 

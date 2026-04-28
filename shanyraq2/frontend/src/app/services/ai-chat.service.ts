@@ -9,6 +9,12 @@ export interface ChatMessage {
 
 export interface ChatResponse {
   reply: string;
+  session_key: string;
+}
+
+export interface ChatHistoryResponse {
+  session_key: string;
+  messages: Array<{ role: string; text: string; created_at: string }>;
 }
 
 export interface EscalatePayload {
@@ -27,8 +33,20 @@ export interface EscalateResponse {
 export class AiChatService {
   private http = inject(HttpClient);
 
-  sendMessage(message: string, history: ChatMessage[]): Observable<ChatResponse> {
-    return this.http.post<ChatResponse>('/api/ai/chat/', { message, history });
+  sendMessage(message: string, history: ChatMessage[], sessionKey: string): Observable<ChatResponse> {
+    return this.http.post<ChatResponse>('/api/ai/chat/', { message, history, session_key: sessionKey });
+  }
+
+  getHistory(sessionKey: string): Observable<ChatHistoryResponse> {
+    return this.http.get<ChatHistoryResponse>('/api/ai/chat/history/', {
+      params: { session_key: sessionKey },
+    });
+  }
+
+  clearHistory(sessionKey: string): Observable<{ detail: string }> {
+    return this.http.delete<{ detail: string }>('/api/ai/chat/clear/', {
+      body: { session_key: sessionKey },
+    });
   }
 
   escalate(data: EscalatePayload): Observable<EscalateResponse> {

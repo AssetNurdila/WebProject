@@ -46,6 +46,9 @@ class ListingSerializer(serializers.ModelSerializer):
             "address",
             "latitude",
             "longitude",
+            "virtual_tour_url",
+            "virtual_tour_provider",
+            "video_review_url",
             "is_active",
             "created_at",
             "updated_at",
@@ -84,13 +87,20 @@ class MapListingSerializer(serializers.ModelSerializer):
             "address",
             "latitude",
             "longitude",
+            "virtual_tour_url",
+            "virtual_tour_provider",
+            "video_review_url",
             "main_image",
             "is_favorited",
         )
 
     def get_is_favorited(self, obj):
+        if hasattr(obj, '_is_favorited_cache'):
+            return obj._is_favorited_cache
         request = self.context.get('request')
         if request and request.user.is_authenticated:
+            if hasattr(obj, '_prefetched_objects_cache') and 'favorited_by' in obj._prefetched_objects_cache:
+                return any(fav.user_id == request.user.id for fav in obj.favorited_by.all())
             return obj.favorited_by.filter(user=request.user).exists()
         return False
 

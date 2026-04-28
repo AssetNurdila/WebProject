@@ -146,7 +146,12 @@ export class ListingDetailComponent implements OnInit {
 
   openTourModal(): void {
     if (this.listing?.virtual_tour_url) {
-      this.safeTourUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.listing.virtual_tour_url);
+      const url = this.listing.virtual_tour_url;
+      if (!this.isAllowedTourDomain(url)) {
+        window.open(url, '_blank');
+        return;
+      }
+      this.safeTourUrl = this.sanitizer.bypassSecurityTrustResourceUrl(url);
       this.isTourModalOpen = true;
     }
   }
@@ -171,6 +176,10 @@ export class ListingDetailComponent implements OnInit {
           url = `https://www.youtube.com/embed/${videoId}`;
         }
       }
+      if (!this.isAllowedVideoDomain(url)) {
+        window.open(this.listing.video_review_url, '_blank');
+        return;
+      }
       this.safeVideoUrl = this.sanitizer.bypassSecurityTrustResourceUrl(url);
       this.isVideoModalOpen = true;
     }
@@ -182,8 +191,35 @@ export class ListingDetailComponent implements OnInit {
   }
 
   scrollToMap(): void {
-    // If the project had a map element, we would scroll to it.
-    // Assuming there's a map block or we just scroll down.
     window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+  }
+
+  private isAllowedTourDomain(url: string): boolean {
+    const allowed = [
+      'my.matterport.com', 'matterport.com',
+      'kuula.co',
+      'app.cloudpano.com',
+      'www.youtube.com', 'youtube.com', 'youtu.be',
+      'player.vimeo.com', 'vimeo.com',
+    ];
+    return this.isDomainInList(url, allowed);
+  }
+
+  private isAllowedVideoDomain(url: string): boolean {
+    const allowed = [
+      'www.youtube.com', 'youtube.com', 'youtu.be',
+      'player.vimeo.com', 'vimeo.com',
+    ];
+    return this.isDomainInList(url, allowed);
+  }
+
+  private isDomainInList(url: string, allowedDomains: string[]): boolean {
+    try {
+      const parsed = new URL(url);
+      if (!['https:', 'http:'].includes(parsed.protocol)) return false;
+      return allowedDomains.some(d => parsed.hostname === d || parsed.hostname.endsWith('.' + d));
+    } catch {
+      return false;
+    }
   }
 }

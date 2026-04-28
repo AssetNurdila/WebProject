@@ -1,4 +1,5 @@
-import { Component, inject, ElementRef, ViewChild, AfterViewChecked } from '@angular/core';
+import { Component, inject, ElementRef, ViewChild, AfterViewChecked, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AiChatService, ChatMessage } from '../../services/ai-chat.service';
 
@@ -13,12 +14,16 @@ export class AiChatComponent implements AfterViewChecked {
   @ViewChild('messagesContainer') private messagesContainer!: ElementRef;
 
   private chatService = inject(AiChatService);
+  private platformId = inject(PLATFORM_ID);
+  private isBrowser = isPlatformBrowser(this.platformId);
 
   isOpen = false;
   showEscalation = false;
   userInput = '';
   isLoading = false;
+  isLoadingHistory = false;
   messages: ChatMessage[] = [];
+  sessionKey: string;
 
   // Escalation form
   escName = '';
@@ -36,15 +41,58 @@ export class AiChatComponent implements AfterViewChecked {
   ];
 
   private shouldScroll = false;
+  private historyLoaded = false;
+
+  constructor() {
+    if (this.isBrowser) {
+      const stored = localStorage.getItem('shanyraq_chat_session');
+      this.sessionKey = stored || this.generateUUID();
+      if (!stored) {
+        localStorage.setItem('shanyraq_chat_session', this.sessionKey);
+      }
+    } else {
+      this.sessionKey = 'ssr-placeholder';
+    }
+  }
 
   toggle(): void {
     this.isOpen = !this.isOpen;
-    if (this.isOpen && this.messages.length === 0) {
-      this.messages.push({
-        role: 'bot',
-        text: 'Добро пожаловать. Я — персональный консьерж платформы «Шанырак». К Вашим услугам: консультации по работе сервиса, составление описаний для Ваших объектов и экспертная поддержка по вопросам недвижимости. Чем могу быть полезен?',
-      });
+
+    if (this.isOpen && !this.historyLoaded) {
+      this.loadHistory();
     }
+  }
+
+  private loadHistory(): void {
+    this.isLoadingHistory = true;
+    this.chatService.getHistory(this.sessionKey).subscribe({
+      next: (res) => {
+        if (res.messages && res.messages.length > 0) {
+          this.messages = res.messages.map(m => ({
+            role: m.role === 'user' ? 'user' : 'bot',
+            text: m.text,
+          }));
+        } else {
+          // Приветственное сообщение (не сохраняется в БД)
+          this.messages = [{
+            role: 'bot',
+            text: 'Добро пожаловать. Я — персональный консьерж платформы «Шанырак». К Вашим услугам: консультации по работе сервиса, составление описаний для Ваших объектов и экспертная поддержка по вопросам недвижимости. Чем могу быть полезен?',
+          }];
+        }
+        this.historyLoaded = true;
+        this.isLoadingHistory = false;
+        this.shouldScroll = true;
+      },
+      error: () => {
+        this.messages = [{
+          role: 'bot',
+          text: 'Добро пожаловать. Я — персональный консьерж платформы «Шанырак». К Вашим услугам: консультации по работе сервиса, составление описаний для Ваших объектов и экспертная поддержка по вопросам недвижимости. Чем могу быть полезен?',
+        }];
+        this.historyLoaded = true;
+        this.isLoadingHistory = false;
+        this.shouldScroll = true;
+      },
+    });
   }
 
   sendQuickAction(action: { label: string; text: string }): void {
@@ -65,9 +113,16 @@ export class AiChatComponent implements AfterViewChecked {
     this.isLoading = true;
     this.shouldScroll = true;
 
-    this.chatService.sendMessage(text, this.messages.slice(0, -1)).subscribe({
+    this.chatService.sendMessage(text, this.messages.slice(0, -1), this.sessionKey).subscribe({
       next: (res) => {
         this.messages.push({ role: 'bot', text: res.reply });
+        // Обновить session_key если сервер вернул новый
+        if (res.session_key && res.session_key !== this.sessionKey) {
+          this.sessionKey = res.session_key;
+          if (this.isBrowser) {
+            localStorage.setItem('shanyraq_chat_session', this.sessionKey);
+          }
+        }
         this.isLoading = false;
         this.shouldScroll = true;
       },
@@ -79,6 +134,19 @@ export class AiChatComponent implements AfterViewChecked {
         this.isLoading = false;
         this.shouldScroll = true;
       },
+    });
+  }
+
+  clearChat(): void {
+    this.chatService.clearHistory(this.sessionKey).subscribe({
+      next: () => {
+        this.messages = [{
+          role: 'bot',
+          text: 'История очищена. Чем могу быть полезен?',
+        }];
+        this.shouldScroll = true;
+      },
+      error: () => {},
     });
   }
 
@@ -132,5 +200,13 @@ export class AiChatComponent implements AfterViewChecked {
       const el = this.messagesContainer?.nativeElement;
       if (el) el.scrollTop = el.scrollHeight;
     } catch (_) {}
+  }
+
+  private generateUUID(): string {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+      const r = (Math.random() * 16) | 0;
+      const v = c === 'x' ? r : (r & 0x3) | 0x8;
+      return v.toString(16);
+    });
   }
 }

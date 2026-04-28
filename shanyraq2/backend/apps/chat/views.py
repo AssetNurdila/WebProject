@@ -2,11 +2,11 @@ import logging
 
 from django.conf import settings
 from rest_framework import status
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import AdminRequest
+from .models import AdminRequest, ChatSession, ChatMessage
 from .prompts import SHANYRAQ_SYSTEM_PROMPT
 
 logger = logging.getLogger(__name__)
@@ -111,14 +111,30 @@ def get_fallback_reply(message: str) -> str:
     return DEFAULT_FALLBACK
 
 
+def _get_or_create_session(request, session_key):
+    """Получить или создать сессию чата."""
+    user = request.user if request.user.is_authenticated else None
+    if user:
+        session, _ = ChatSession.objects.get_or_create(
+            user=user, session_key=session_key,
+        )
+    else:
+        session, _ = ChatSession.objects.get_or_create(
+            session_key=session_key, user=None,
+        )
+    return session
+
+
 class ChatView(APIView):
-    """AI чат-ассистент. Gemini API с fallback на готовые ответы."""
+    """AI чат-ассистент. Gemini API с fallback на готовые ответы.
+    Сохраняет историю переписки в БД."""
 
     permission_classes = [AllowAny]
 
     def post(self, request):
         user_message = request.data.get("message", "").strip()
         history = request.data.get("history", [])
+        session_key = request.data.get("session_key", "default")
 
         if not user_message:
             return Response(
@@ -126,7 +142,22 @@ class ChatView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # Получить или создать сессию
+        session = _get_or_create_session(request, session_key)
+
+        # Сохранить сообщение пользователя
+        ChatMessage.objects.create(session=session, role="user", text=user_message)
+
         # Попробовать Gemini API
+        reply = self._get_ai_reply(user_message, history)
+
+        # Сохранить ответ бота
+        ChatMessage.objects.create(session=session, role="bot", text=reply)
+
+        return Response({"reply": reply, "session_key": session.session_key}, status=status.HTTP_200_OK)
+
+    def _get_ai_reply(self, user_message, history):
+        """Попытка получить ответ от Gemini, с fallback на готовые ответы."""
         api_key = getattr(settings, "GEMINI_API_KEY", None)
         if api_key:
             try:
@@ -146,7 +177,7 @@ class ChatView(APIView):
                 contents.append({"role": "user", "parts": [{"text": user_message}]})
 
                 url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}"
-                
+
                 payload = {
                     "systemInstruction": {
                         "parts": [{"text": SHANYRAQ_SYSTEM_PROMPT}]
@@ -157,33 +188,71 @@ class ChatView(APIView):
                         "maxOutputTokens": 1024
                     }
                 }
-                
+
                 req = urllib.request.Request(
                     url,
                     data=json.dumps(payload).encode("utf-8"),
                     headers={"Content-Type": "application/json"}
                 )
-                
+
                 with urllib.request.urlopen(req, timeout=10) as response:
                     res_body = response.read()
                     res_json = json.loads(res_body)
-                    
+
                     try:
                         reply = res_json["candidates"][0]["content"]["parts"][0]["text"]
                     except (KeyError, IndexError):
                         reply = ""
-                    
-                    if not reply:
-                        reply = get_fallback_reply(user_message)
-                        
-                return Response({"reply": reply}, status=status.HTTP_200_OK)
+
+                    if reply:
+                        return reply
 
             except Exception as e:
                 logger.warning("Gemini API unavailable, using fallback: %s", e)
 
-        # Fallback — готовые ответы
-        reply = get_fallback_reply(user_message)
-        return Response({"reply": reply}, status=status.HTTP_200_OK)
+        return get_fallback_reply(user_message)
+
+
+class ChatHistoryView(APIView):
+    """Загрузка истории чата по session_key."""
+
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        session_key = request.query_params.get("session_key", "default")
+
+        try:
+            if request.user.is_authenticated:
+                session = ChatSession.objects.get(user=request.user, session_key=session_key)
+            else:
+                session = ChatSession.objects.get(user=None, session_key=session_key)
+        except ChatSession.DoesNotExist:
+            return Response({"messages": []}, status=status.HTTP_200_OK)
+
+        messages = session.messages.values("role", "text", "created_at").order_by("created_at")
+        return Response({
+            "session_key": session.session_key,
+            "messages": list(messages),
+        }, status=status.HTTP_200_OK)
+
+
+class ClearChatView(APIView):
+    """Очистка истории чата."""
+
+    permission_classes = [AllowAny]
+
+    def delete(self, request):
+        session_key = request.data.get("session_key", "default")
+
+        try:
+            if request.user.is_authenticated:
+                session = ChatSession.objects.get(user=request.user, session_key=session_key)
+            else:
+                session = ChatSession.objects.get(user=None, session_key=session_key)
+            session.messages.all().delete()
+            return Response({"detail": "История очищена."}, status=status.HTTP_200_OK)
+        except ChatSession.DoesNotExist:
+            return Response({"detail": "Сессия не найдена."}, status=status.HTTP_404_NOT_FOUND)
 
 
 class EscalateView(APIView):

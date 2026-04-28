@@ -67,6 +67,9 @@ class Listing(models.Model):
     longitude = models.DecimalField(
         max_digits=9, decimal_places=6, null=True, blank=True
     )
+    virtual_tour_url = models.URLField(max_length=500, blank=True, default='')
+    virtual_tour_provider = models.CharField(max_length=50, blank=True, default='')
+    video_review_url = models.URLField(max_length=500, blank=True, default='')
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

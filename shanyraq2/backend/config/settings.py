@@ -10,16 +10,16 @@ except ImportError:
 try:
     from decouple import config
 except ImportError:
+    import os
     def config(key, default=None, cast=None):
-        value = default
+        value = os.environ.get(key, default)
         if cast and value is not None:
             return cast(value)
         return value
 
-BASE_DIR = Path(__file__).resolve().parent.parent
-
 import dj_database_url
-from decouple import config
+
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = config("SECRET_KEY")
 DEBUG = config("DEBUG", default=False, cast=bool)

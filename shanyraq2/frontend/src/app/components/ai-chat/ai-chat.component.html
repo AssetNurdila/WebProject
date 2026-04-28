@@ -19,7 +19,12 @@
           <div class="header-subtitle">Шанырак</div>
         </div>
       </div>
-      <button class="header-close" (click)="toggle()">✕</button>
+      <div class="header-actions">
+        @if (messages.length > 1) {
+          <button class="header-clear" (click)="clearChat()" title="Очистить историю">🗑</button>
+        }
+        <button class="header-close" (click)="toggle()">✕</button>
+      </div>
     </div>
 
     <!-- Escalation form -->
@@ -67,6 +72,17 @@
     } @else {
       <!-- Messages -->
       <div class="chat-messages" #messagesContainer>
+        @if (isLoadingHistory) {
+          <div class="history-loading">
+            <div class="history-loading-dots">
+              <span class="dot"></span>
+              <span class="dot"></span>
+              <span class="dot"></span>
+            </div>
+            <div class="history-loading-text">Загрузка истории...</div>
+          </div>
+        }
+
         @for (msg of messages; track $index) {
           <div class="message" [class.user]="msg.role === 'user'" [class.bot]="msg.role === 'bot'">
             @if (msg.role === 'bot') {
@@ -88,7 +104,7 @@
         }
 
         <!-- Quick actions (show only at start) -->
-        @if (messages.length <= 1 && !isLoading) {
+        @if (messages.length <= 1 && !isLoading && !isLoadingHistory) {
           <div class="quick-actions">
             @for (action of quickActions; track action.label) {
               <button class="quick-btn" (click)="sendQuickAction(action)">
