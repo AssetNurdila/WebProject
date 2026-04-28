@@ -199,6 +199,90 @@
             />
           </div>
 
+          <div class="form-block">
+            <div class="form-block-head">
+              <span class="form-block-num">05</span>
+              <span class="form-block-title">Фотографии объекта</span>
+            </div>
+            <p class="form-block-hint">
+              Добавьте фотографии дома, участка, квартиры или коммерческого помещения. Первое изображение будет использоваться как главное фото объявления.
+            </p>
+
+            <div class="photo-upload-meta">
+              <span class="photo-upload-count">Выбрано: {{ selectedImageCount }} / {{ maxListingImages }}</span>
+              <span class="photo-upload-note">Первое фото будет главным</span>
+            </div>
+
+            <label class="photo-upload-dropzone">
+              <input
+                type="file"
+                accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                multiple
+                (change)="onImagesSelected($event)"
+              />
+              <span class="photo-upload-dropzone-title">Выбрать фотографии</span>
+              <span class="photo-upload-dropzone-text">До 5 МБ за файл, максимум 10 изображений.</span>
+            </label>
+
+            @if (imagesError) {
+              <div class="error-msg">{{ imagesError }}</div>
+            }
+
+            @if (selectedImages.length > 0) {
+              <div class="photo-preview-grid">
+                @for (image of selectedImages; track image.previewUrl; let index = $index) {
+                  <div class="photo-preview-card">
+                    <img [src]="image.previewUrl" [alt]="image.file.name" />
+                    @if (index === 0) {
+                      <span class="photo-main-badge">Главное фото</span>
+                    }
+                    <button type="button" class="photo-remove-btn" (click)="removeSelectedImage(index)">
+                      Удалить
+                    </button>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+
+          <div class="form-block">
+            <div class="form-block-head">
+              <span class="form-block-num">06</span>
+              <span class="form-block-title">Виртуальный тур / 360° обзор</span>
+            </div>
+            <p class="form-block-hint">
+              Добавьте ссылку на готовый 360° тур или видео-обзор объекта. Это поможет покупателю лучше оценить дом, участок или коммерческое помещение.
+            </p>
+
+            <div class="field">
+              <label>Ссылка на 360° тур</label>
+              <input type="url" [(ngModel)]="newListing.virtual_tour_url" name="virtual_tour_url"
+                placeholder="https://my.matterport.com/show?play=1&lang=en-US&m=..." />
+            </div>
+
+            <div class="field">
+              <label>Провайдер тура</label>
+              <select [(ngModel)]="newListing.virtual_tour_provider" name="virtual_tour_provider" class="custom-select">
+                <option value="">Выберите провайдера</option>
+                <option value="matterport">Matterport</option>
+                <option value="kuula">Kuula</option>
+                <option value="cloudpano">CloudPano</option>
+                <option value="custom">Custom / Other</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>Ссылка на видео-обзор</label>
+              <input type="url" [(ngModel)]="newListing.video_review_url" name="video_review_url"
+                placeholder="https://www.youtube.com/watch?v=... или https://youtu.be/..." />
+            </div>
+
+            <div class="field upload-placeholder" style="margin-top: 20px; padding: 20px; border: 1px dashed #cca876; border-radius: 8px; text-align: center;">
+              <h4 style="color: #cca876; margin-bottom: 8px; font-weight: 500;">Загрузить 360° панорамы</h4>
+              <p style="color: #aaa; font-size: 14px; margin: 0;">Функция загрузки панорам будет доступна позже. Сейчас можно добавить ссылку на готовый 360° тур.</p>
+            </div>
+          </div>
+
           @if (createError) {
             <div class="error-msg">{{ createError }}</div>
           }

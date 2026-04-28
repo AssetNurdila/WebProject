@@ -786,6 +786,120 @@
   color: #0a0a0a;
 }
 
+.photo-upload-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 11px;
+  color: var(--text-secondary);
+  letter-spacing: 0.06em;
+}
+
+.photo-upload-count,
+.photo-upload-note {
+  padding: 8px 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.02);
+}
+
+.photo-upload-note {
+  color: var(--gold);
+}
+
+.photo-upload-dropzone {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  min-height: 180px;
+  padding: 28px;
+  border: 1px dashed rgba(201,168,76,0.55);
+  background: linear-gradient(180deg, rgba(201,168,76,0.06) 0%, rgba(255,255,255,0.01) 100%);
+  text-align: center;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.photo-upload-dropzone:hover {
+  border-color: var(--gold);
+  background: linear-gradient(180deg, rgba(201,168,76,0.1) 0%, rgba(255,255,255,0.015) 100%);
+}
+
+.photo-upload-dropzone input {
+  display: none;
+}
+
+.photo-upload-dropzone-title {
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.photo-upload-dropzone-text {
+  max-width: 420px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.photo-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 16px;
+}
+
+.photo-preview-card {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.02);
+}
+
+.photo-preview-card img {
+  display: block;
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+}
+
+.photo-main-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  padding: 5px 10px;
+  background: rgba(10,10,10,0.82);
+  border: 1px solid rgba(201,168,76,0.45);
+  color: var(--gold);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.photo-remove-btn {
+  width: 100%;
+  border: none;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  background: rgba(10,10,10,0.92);
+  color: var(--text-primary);
+  padding: 12px 10px;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-family: 'Montserrat', sans-serif;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.photo-remove-btn:hover {
+  color: #0a0a0a;
+  background: var(--gold);
+}
+
 .form-actions {
   display: flex;
   gap: 14px;
@@ -876,4 +990,14 @@
   letter-spacing: 0.15em;
   text-transform: uppercase;
   color: var(--text-secondary);
+}
+
+@media (max-width: 768px) {
+  .photo-upload-meta {
+    flex-direction: column;
+  }
+
+  .photo-preview-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }

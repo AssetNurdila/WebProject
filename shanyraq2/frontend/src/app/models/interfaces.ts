@@ -32,6 +32,9 @@ export interface Listing {
   created_at: string;
   updated_at: string;
   is_favorited?: boolean;
+  virtual_tour_url?: string | null;
+  virtual_tour_provider?: string | null;
+  video_review_url?: string | null;
 }
 
 export interface MapListing {
@@ -47,6 +50,9 @@ export interface MapListing {
   longitude: number;
   main_image: string | null;
   is_favorited?: boolean;
+  virtual_tour_url?: string | null;
+  virtual_tour_provider?: string | null;
+  video_review_url?: string | null;
 }
 
 export interface MapBounds {

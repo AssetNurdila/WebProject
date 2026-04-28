@@ -2,6 +2,7 @@ import { Component, inject, OnInit, DestroyRef, ChangeDetectorRef } from '@angul
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { switchMap, EMPTY, catchError, of } from 'rxjs';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ListingsService } from '../../services/listings.service';
 import { FavoritesService } from '../../services/favorites.service';
 import { AuthService } from '../../services/auth.service';
@@ -23,6 +24,7 @@ export class ListingDetailComponent implements OnInit {
   private favoritesService = inject(FavoritesService);
   private authService = inject(AuthService);
   private cdr = inject(ChangeDetectorRef);
+  private sanitizer = inject(DomSanitizer);
 
   listing: Listing | null = null;
   similarListings: Listing[] = [];
@@ -31,6 +33,11 @@ export class ListingDetailComponent implements OnInit {
   errorMessage = '';
   isFavorited = false;
   toastMessage = '';
+
+  isTourModalOpen = false;
+  isVideoModalOpen = false;
+  safeTourUrl: SafeResourceUrl | null = null;
+  safeVideoUrl: SafeResourceUrl | null = null;
 
   get isLoggedIn(): boolean {
     return this.authService.isLoggedIn();
@@ -135,5 +142,48 @@ export class ListingDetailComponent implements OnInit {
   private showToast(msg: string): void {
     this.toastMessage = msg;
     setTimeout(() => (this.toastMessage = ''), 3000);
+  }
+
+  openTourModal(): void {
+    if (this.listing?.virtual_tour_url) {
+      this.safeTourUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.listing.virtual_tour_url);
+      this.isTourModalOpen = true;
+    }
+  }
+
+  closeTourModal(): void {
+    this.isTourModalOpen = false;
+    this.safeTourUrl = null;
+  }
+
+  openVideoModal(): void {
+    if (this.listing?.video_review_url) {
+      let url = this.listing.video_review_url;
+      // Convert YouTube watch links to embed links
+      if (url.includes('youtube.com/watch?v=')) {
+        const videoId = new URLSearchParams(url.split('?')[1]).get('v');
+        if (videoId) {
+          url = `https://www.youtube.com/embed/${videoId}`;
+        }
+      } else if (url.includes('youtu.be/')) {
+        const videoId = url.split('youtu.be/')[1].split('?')[0];
+        if (videoId) {
+          url = `https://www.youtube.com/embed/${videoId}`;
+        }
+      }
+      this.safeVideoUrl = this.sanitizer.bypassSecurityTrustResourceUrl(url);
+      this.isVideoModalOpen = true;
+    }
+  }
+
+  closeVideoModal(): void {
+    this.isVideoModalOpen = false;
+    this.safeVideoUrl = null;
+  }
+
+  scrollToMap(): void {
+    // If the project had a map element, we would scroll to it.
+    // Assuming there's a map block or we just scroll down.
+    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
   }
 }

@@ -10,6 +10,28 @@ import { MapPickerComponent, PickedLocation } from '../../components/map-picker/
 import { FavoritesService } from '../../services/favorites.service';
 import { ListingCardComponent } from '../../components/listing-card/listing-card.component';
 
+type NewListingForm = {
+  title: string;
+  description: string;
+  listing_type: 'rent' | 'sale';
+  price: number | null;
+  area: number | null;
+  rooms: number | null;
+  floor: number | null;
+  city: string;
+  address: string;
+  latitude: number | null;
+  longitude: number | null;
+  virtual_tour_url: string | null;
+  virtual_tour_provider: string | null;
+  video_review_url: string | null;
+};
+
+type SelectedListingImage = {
+  file: File;
+  previewUrl: string;
+};
+
 @Component({
   selector: 'app-dashboard',
   standalone: true,
@@ -45,19 +67,13 @@ export class DashboardComponent implements OnInit {
   avatarFile: File | null = null;
   avatarError = '';
 
-  newListing = {
-    title: '',
-    description: '',
-    listing_type: 'rent',
-    price: null as number | null,
-    area: null as number | null,
-    rooms: null as number | null,
-    floor: null as number | null,
-    city: '',
-    address: '',
-    latitude: null as number | null,
-    longitude: null as number | null,
-  };
+  readonly maxListingImages = 10;
+  readonly maxListingImageSizeBytes = 5 * 1024 * 1024;
+  readonly acceptedImageTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
+
+  newListing: NewListingForm = this.getEmptyListingForm();
+  selectedImages: SelectedListingImage[] = [];
+  imagesError = '';
   createError = '';
   createSuccess = false;
   isCreating = false;
@@ -78,6 +94,8 @@ export class DashboardComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.destroyRef.onDestroy(() => this.resetSelectedImages());
+
     this.authService.currentUser$.pipe(
       takeUntilDestroyed(this.destroyRef)
     ).subscribe((user) => {
@@ -158,6 +176,10 @@ export class DashboardComponent implements OnInit {
     this.router.navigate(['/listing', id]);
   }
 
+  get selectedImageCount(): number {
+    return this.selectedImages.length;
+  }
+
   onCreateListing(): void {
     if (
       !this.newListing.title ||
@@ -170,16 +192,15 @@ export class DashboardComponent implements OnInit {
     }
     this.isCreating = true;
     this.createError = '';
-    this.listingsService.create(this.newListing).subscribe({
+    this.imagesError = '';
+
+    this.listingsService.create(this.buildListingFormData()).subscribe({
       next: (listing) => {
         this.myListings.unshift(listing);
         this.createSuccess = true;
         this.isCreating = false;
-        this.newListing = {
-          title: '', description: '', listing_type: 'rent',
-          price: null, area: null, rooms: null, floor: null, city: '', address: '',
-          latitude: null, longitude: null,
-        };
+        this.newListing = this.getEmptyListingForm();
+        this.resetSelectedImages();
         setTimeout(() => {
           this.createSuccess = false;
           this.activeSection = 'listings';
@@ -196,6 +217,54 @@ export class DashboardComponent implements OnInit {
         }
       },
     });
+  }
+
+  onImagesSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const files = Array.from(input.files ?? []);
+    input.value = '';
+
+    if (!files.length) {
+      return;
+    }
+
+    this.imagesError = '';
+    const availableSlots = this.maxListingImages - this.selectedImages.length;
+
+    if (availableSlots <= 0) {
+      this.imagesError = `Можно загрузить не более ${this.maxListingImages} фотографий.`;
+      return;
+    }
+
+    for (const file of files.slice(0, availableSlots)) {
+      const validationError = this.validateImageFile(file);
+      if (validationError) {
+        this.imagesError = validationError;
+        continue;
+      }
+
+      this.selectedImages.push({
+        file,
+        previewUrl: URL.createObjectURL(file),
+      });
+    }
+
+    if (files.length > availableSlots) {
+      this.imagesError = `Можно загрузить не более ${this.maxListingImages} фотографий.`;
+    }
+  }
+
+  removeSelectedImage(index: number): void {
+    const image = this.selectedImages[index];
+    if (!image) {
+      return;
+    }
+
+    URL.revokeObjectURL(image.previewUrl);
+    this.selectedImages.splice(index, 1);
+    if (!this.selectedImages.length) {
+      this.imagesError = '';
+    }
   }
 
   onAvatarSelect(event: Event): void {
@@ -276,5 +345,78 @@ export class DashboardComponent implements OnInit {
 
   formatPrice(price: number): string {
     return '₸ ' + Number(price).toLocaleString('ru-RU');
+  }
+
+  private getEmptyListingForm(): NewListingForm {
+    return {
+      title: '',
+      description: '',
+      listing_type: 'rent',
+      price: null,
+      area: null,
+      rooms: null,
+      floor: null,
+      city: '',
+      address: '',
+      latitude: null,
+      longitude: null,
+      virtual_tour_url: '',
+      virtual_tour_provider: '',
+      video_review_url: '',
+    };
+  }
+
+  private buildListingFormData(): FormData {
+    const formData = new FormData();
+
+    const fields: Array<[keyof NewListingForm, string | number | null]> = [
+      ['title', this.newListing.title],
+      ['description', this.newListing.description],
+      ['listing_type', this.newListing.listing_type],
+      ['price', this.newListing.price],
+      ['area', this.newListing.area],
+      ['rooms', this.newListing.rooms],
+      ['floor', this.newListing.floor],
+      ['city', this.newListing.city],
+      ['address', this.newListing.address],
+      ['latitude', this.newListing.latitude],
+      ['longitude', this.newListing.longitude],
+      ['virtual_tour_url', this.newListing.virtual_tour_url],
+      ['virtual_tour_provider', this.newListing.virtual_tour_provider],
+      ['video_review_url', this.newListing.video_review_url],
+    ];
+
+    for (const [key, value] of fields) {
+      if (value === null || value === undefined) {
+        continue;
+      }
+      formData.append(key, String(value));
+    }
+
+    for (const image of this.selectedImages) {
+      formData.append('images', image.file);
+    }
+
+    return formData;
+  }
+
+  private validateImageFile(file: File): string | null {
+    if (!this.acceptedImageTypes.has(file.type)) {
+      return 'Допустимы только изображения JPG, JPEG, PNG или WEBP.';
+    }
+
+    if (file.size > this.maxListingImageSizeBytes) {
+      return 'Размер каждого изображения должен быть не больше 5 МБ.';
+    }
+
+    return null;
+  }
+
+  private resetSelectedImages(): void {
+    for (const image of this.selectedImages) {
+      URL.revokeObjectURL(image.previewUrl);
+    }
+    this.selectedImages = [];
+    this.imagesError = '';
   }
 }
