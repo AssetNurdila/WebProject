@@ -33,8 +33,8 @@ export interface EscalateResponse {
 export class AiChatService {
   private http = inject(HttpClient);
 
-  sendMessage(message: string, history: ChatMessage[], sessionKey: string): Observable<ChatResponse> {
-    return this.http.post<ChatResponse>('/api/ai/chat/', { message, history, session_key: sessionKey });
+  sendMessage(message: string, history: ChatMessage[], sessionKey: string, filters: any = {}): Observable<ChatResponse> {
+    return this.http.post<ChatResponse>('/api/ai/chat/', { message, history, session_key: sessionKey, filters });
   }
 
   getHistory(sessionKey: string): Observable<ChatHistoryResponse> {

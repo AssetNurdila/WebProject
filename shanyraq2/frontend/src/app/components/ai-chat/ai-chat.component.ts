@@ -2,11 +2,14 @@ import { Component, inject, ElementRef, ViewChild, AfterViewChecked, PLATFORM_ID
 import { isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AiChatService, ChatMessage } from '../../services/ai-chat.service';
+import { FilterService } from '../../services/filter.service';
+import { MarkdownComponent } from 'ngx-markdown';
 
+declare var puter: any;
 @Component({
   selector: 'app-ai-chat',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, MarkdownComponent],
   templateUrl: './ai-chat.component.html',
   styleUrl: './ai-chat.component.css',
 })
@@ -14,6 +17,7 @@ export class AiChatComponent implements AfterViewChecked {
   @ViewChild('messagesContainer') private messagesContainer!: ElementRef;
 
   private chatService = inject(AiChatService);
+  private filterService = inject(FilterService);
   private platformId = inject(PLATFORM_ID);
   private isBrowser = isPlatformBrowser(this.platformId);
 
@@ -113,7 +117,9 @@ export class AiChatComponent implements AfterViewChecked {
     this.isLoading = true;
     this.shouldScroll = true;
 
-    this.chatService.sendMessage(text, this.messages.slice(0, -1), this.sessionKey).subscribe({
+    const currentFilters = this.filterService.getFilters();
+
+    this.chatService.sendMessage(text, this.messages.slice(0, -1), this.sessionKey, currentFilters).subscribe({
       next: (res) => {
         this.messages.push({ role: 'bot', text: res.reply });
         // Обновить session_key если сервер вернул новый

@@ -88,7 +88,13 @@
             @if (msg.role === 'bot') {
               <div class="msg-avatar">✦</div>
             }
-            <div class="msg-bubble">{{ msg.text }}</div>
+            <div class="msg-bubble">
+              @if (msg.role === 'bot') {
+                <markdown [data]="msg.text"></markdown>
+              } @else {
+                {{ msg.text }}
+              }
+            </div>
           </div>
         }
 

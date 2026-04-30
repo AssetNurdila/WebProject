@@ -125,4 +125,5 @@ SIMPLE_JWT = {
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
-GEMINI_API_KEY = config("GEMINI_API_KEY")
+GEMINI_API_KEY = config("GEMINI_API_KEY", default=None)
+OPENAI_API_KEY = config("OPENAI_API_KEY", default=None)

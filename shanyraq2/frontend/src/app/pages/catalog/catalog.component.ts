@@ -7,6 +7,7 @@ import { ListingCardComponent } from '../../components/listing-card/listing-card
 import { ListingsMapComponent } from '../../components/listings-map/listings-map.component';
 import { ListingsService } from '../../services/listings.service';
 import { Listing, ListingFilters, MapBounds, MapListing } from '../../models/interfaces';
+import { FilterService } from '../../services/filter.service';
 
 @Component({
   selector: 'app-catalog',
@@ -22,6 +23,7 @@ export class CatalogComponent implements OnInit {
   private router = inject(Router);
   private destroyRef = inject(DestroyRef);
   private cdr = inject(ChangeDetectorRef);
+  private filterService = inject(FilterService);
 
   listings: Listing[] = [];
   isLoading = true;
@@ -74,6 +76,7 @@ export class CatalogComponent implements OnInit {
     ).subscribe((response) => {
       this.listings = response.results;
       this.isLoading = false;
+      this.filterService.setFilters(this.cleanFilters());
       this.cdr.detectChanges();
     });
 
